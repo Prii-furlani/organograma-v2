@@ -261,7 +261,9 @@ function OrganogramaContent() {
         'jhe_org_expanded_nodes',
         'jhe_expanded_nodes',
         'organograma_expanded',
-        'jhe_organograma_expansion_state'
+        'jhe_organograma_expansion_state',
+        'jhe_remembered_password',
+        'jhe_login_password'
       ];
       keysObsoletas.forEach((key) => {
         localStorage.removeItem(key);

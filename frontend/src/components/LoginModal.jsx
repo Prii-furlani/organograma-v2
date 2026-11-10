@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Network, Eye, EyeOff, Loader2, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import JheLogo from './JheLogo';
@@ -22,16 +22,63 @@ export default function LoginModal({
 }) {
   const auth = useAuth() || {};
   const realizarLogin = auth.realizarLogin || auth.login || (async () => ({}));
-  const [email, setEmail] = useState('governanca@jhe.com.br');
-  const [senha, setSenha] = useState('JHE@2026');
-  const [lembrarDeMim, setLembrarDeMim] = useState(true);
+
+  // Estados iniciam estritamente vazios sem nenhuma credencial hardcoded
+  const [email, setEmail] = useState(() => {
+    try {
+      return localStorage.getItem('jhe_remembered_email') || '';
+    } catch {
+      return '';
+    }
+  });
+  const [senha, setSenha] = useState('');
+  const [lembrarDeMim, setLembrarDeMim] = useState(() => {
+    try {
+      return Boolean(localStorage.getItem('jhe_remembered_email'));
+    } catch {
+      return false;
+    }
+  });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
+  // Limpeza de segurança e reset do formulário ao abrir ou fechar o modal
+  useEffect(() => {
+    // Remove qualquer chave legada que possa ter salvo senhas indevidamente
+    try {
+      localStorage.removeItem('jhe_remembered_password');
+      localStorage.removeItem('jhe_login_password');
+      sessionStorage.removeItem('jhe_remembered_password');
+      sessionStorage.removeItem('jhe_login_password');
+    } catch (_) {}
+
+    setSenha('');
+    setErrorMessage('');
+    setShowPassword(false);
+
+    if (isOpen) {
+      try {
+        const remembered = localStorage.getItem('jhe_remembered_email') || '';
+        if (remembered) {
+          setEmail(remembered);
+          setLembrarDeMim(true);
+        } else {
+          setEmail('');
+          setLembrarDeMim(false);
+        }
+      } catch {
+        setEmail('');
+      }
+    }
+  }, [isOpen]);
+
   if (isModal && !isOpen) return null;
 
   const handleBack = () => {
+    setSenha('');
+    setErrorMessage('');
+    setShowPassword(false);
     if (onBackToPublic) {
       onBackToPublic();
     } else if (onClose) {
@@ -44,20 +91,21 @@ export default function LoginModal({
     setErrorMessage('');
     setIsLoading(true);
 
-    console.log('[LOGIN SUBMIT] Enviando:', { email });
-
     try {
+      if (lembrarDeMim && email.trim()) {
+        localStorage.setItem('jhe_remembered_email', email.trim());
+      } else {
+        localStorage.removeItem('jhe_remembered_email');
+      }
+
       if (onLogin) {
         await onLogin({ email, senha, lembrarDeMim });
       } else if (realizarLogin) {
         await realizarLogin(email, senha, lembrarDeMim);
       }
+      setSenha('');
       if (onClose) onClose();
     } catch (err) {
-      const status = err.response?.status || 500;
-      const data = err.response?.data || { mensagem: err.message };
-      console.log('[LOGIN RESPONSE]', status, data);
-
       const msg =
         err.response?.data?.mensagem ||
         err.message ||
@@ -126,7 +174,7 @@ export default function LoginModal({
               </label>
               <input
                 id="login-email"
-                type="text"
+                type="email"
                 autoComplete="username"
                 required
                 value={email}
@@ -152,7 +200,7 @@ export default function LoginModal({
                   required
                   value={senha}
                   onChange={(e) => setSenha(e.target.value)}
-                  placeholder="••••••••••••"
+                  placeholder="••••••••"
                   className="w-full h-12 pl-4 pr-11 rounded-xl text-sm text-slate-800 placeholder-slate-400 bg-slate-100/70 border border-slate-200/50 focus:bg-white focus:border-sky-300 focus:ring-4 focus:ring-sky-100/60 focus:outline-none transition-all font-sans"
                 />
                 <button
