@@ -22,7 +22,7 @@ function getLevelAccentColor(slug = '') {
 }
 
 const CARD_WIDTH = 260;
-const CARD_HEIGHT = 148;
+const CARD_HEIGHT = 154;
 const VERTICAL_GAP = 95; // Espaçamento vertical entre a base do pai e o topo do filho (80px - 100px)
 const HORIZONTAL_GAP = 45; // Espaçamento horizontal mínimo entre nós irmãos contíguos (>= 40px)
 const NEIGHBOUR_GAP = 60; // Espaçamento entre blocos de subárvores vizinhas
@@ -1122,7 +1122,7 @@ const OrganogramaView = forwardRef(function OrganogramaView(
                    position: relative !important;
                    width: 100% !important;
                    height: 100% !important;
-                   min-height: 148px !important;
+                   min-height: 154px !important;
                    box-sizing: border-box !important;
                    overflow: hidden !important;
                    border-radius: 16px !important;
@@ -1142,7 +1142,7 @@ const OrganogramaView = forwardRef(function OrganogramaView(
                      box-sizing: border-box !important;
                      width: 100% !important;
                      height: 100% !important;
-                     padding: 12px 14px 10px 14px !important;
+                     padding: 12px 14px 20px 14px !important;
                      display: flex !important;
                      flex-direction: column !important;
                      justify-content: space-between !important;
@@ -1188,17 +1188,17 @@ const OrganogramaView = forwardRef(function OrganogramaView(
                     temGestorReal
                       ? `
                         <!-- Caso Tenha Gestor Formal -->
-                        <div style="display: flex !important; align-items: center !important; gap: 8px !important; min-width: 0 !important; padding-right: 8px !important; overflow: hidden !important; flex: 1 !important;">
+                        <div style="display: flex !important; align-items: center !important; gap: 7px !important; min-width: 0 !important; max-width: 140px !important; padding-right: 4px !important; overflow: hidden !important;">
                           ${renderAvataresHtml(titularesReais, isDark, corAcento)}
-                          <span style="font-size: 11px !important; font-weight: 500 !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; color: ${isDark ? '#CBD5E1' : '#334155'} !important;" title="${formattedLeadersText}">
+                          <span style="font-size: 11px !important; font-weight: 500 !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; max-width: 105px !important; color: ${isDark ? '#CBD5E1' : '#334155'} !important;" title="${formattedLeadersText}">
                             ${formattedLeadersText}
                           </span>
                         </div>
                       `
                       : `
                         <!-- Caso NÃO Tenha Gestor: Foco na Equipe Direta/Operacional -->
-                        <div style="display: flex !important; align-items: center !important; gap: 6px !important; min-width: 0 !important; padding-right: 8px !important; overflow: hidden !important; flex: 1 !important;">
-                          <span style="font-size: 10px !important; font-weight: 500 !important; letter-spacing: -0.01em !important; color: ${isDark ? '#64748B' : '#94A3B8'} !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important;">
+                        <div style="display: flex !important; align-items: center !important; gap: 6px !important; min-width: 0 !important; max-width: 140px !important; padding-right: 4px !important; overflow: hidden !important;">
+                          <span style="font-size: 10px !important; font-weight: 500 !important; letter-spacing: -0.01em !important; color: ${isDark ? '#64748B' : '#94A3B8'} !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; max-width: 130px !important;">
                             ${membros.length > 0 ? `${membros.length} colaborador(es)` : 'Sem gestor titular'}
                           </span>
                         </div>

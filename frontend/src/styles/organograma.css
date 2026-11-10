@@ -200,20 +200,22 @@ svg.svg-chart-container .node-foreign-object {
 
 /* Botão de Expansão/Colapso Minimalista (.jhe-expand-pill) */
 .jhe-expand-pill {
+  position: relative;
+  z-index: 20;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 3px;
   height: 24px;
-  min-width: 36px;
+  min-width: 38px;
   padding: 0 8px;
   border-radius: 9999px;
   font-size: 10.5px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--jhe-text-muted);
   background-color: var(--jhe-surface-card);
   border: 1px solid var(--jhe-border-subtle);
-  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
   cursor: pointer;
   user-select: none;
   transition: all 0.15s ease;
