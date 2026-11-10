@@ -672,92 +672,57 @@ svg.svg-chart-container .node-foreign-object {
 }
 
 /* Scrollbar ultrafina e discreta para o popover de equipe */
+.custom-scrollbar,
 .custom-scrollbar-subtle {
   scrollbar-width: thin;
   scrollbar-color: rgba(148, 163, 184, 0.4) transparent;
 }
 
+.custom-scrollbar::-webkit-scrollbar,
 .custom-scrollbar-subtle::-webkit-scrollbar {
   width: 4px;
 }
 
+.custom-scrollbar::-webkit-scrollbar-track,
 .custom-scrollbar-subtle::-webkit-scrollbar-track {
   background: transparent;
 }
 
+.custom-scrollbar::-webkit-scrollbar-thumb,
 .custom-scrollbar-subtle::-webkit-scrollbar-thumb {
   background: rgba(148, 163, 184, 0.4);
   border-radius: 9999px;
 }
 
+.custom-scrollbar::-webkit-scrollbar-thumb:hover,
 .custom-scrollbar-subtle::-webkit-scrollbar-thumb:hover {
   background: rgba(100, 116, 139, 0.7);
 }
 
+[data-theme="dark"] .custom-scrollbar,
+.dark .custom-scrollbar,
 [data-theme="dark"] .custom-scrollbar-subtle,
 .dark .custom-scrollbar-subtle {
   scrollbar-color: rgba(148, 163, 184, 0.25) transparent;
 }
 
+[data-theme="dark"] .custom-scrollbar::-webkit-scrollbar-thumb,
+.dark .custom-scrollbar::-webkit-scrollbar-thumb,
 [data-theme="dark"] .custom-scrollbar-subtle::-webkit-scrollbar-thumb,
 .dark .custom-scrollbar-subtle::-webkit-scrollbar-thumb {
   background: rgba(148, 163, 184, 0.25);
 }
 
-/* Tooltip Popover Flutuante */
-.team-popover,
-.team-tooltip-popover {
-  position: absolute;
-  bottom: calc(100% + 8px);
-  right: 0;
-  width: 18rem;
-  max-height: 16rem;
-  display: none;
-  flex-direction: column;
-  overflow: hidden;
-  background-color: var(--jhe-surface-card);
-  border: 1px solid var(--jhe-border-subtle);
-  border-radius: 1rem;
-  box-shadow: 0 20px 35px -5px rgba(15, 23, 42, 0.2), 0 0 15px -3px rgba(0, 0, 0, 0.05);
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(6px);
-  transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s;
-  pointer-events: none;
-  z-index: 999;
-}
-
-[data-theme="dark"] .team-popover,
-.dark .team-popover,
-[data-theme="dark"] .team-tooltip-popover,
-.dark .team-tooltip-popover {
-  background-color: #0F1E36;
-  border: 1px solid rgba(148, 163, 184, 0.22);
-  box-shadow: 0 20px 40px -5px rgba(0, 0, 0, 0.7);
-}
-
-/* Ponte invisível que preenche o vão entre a badge e o popover */
-.team-popover::after,
-.team-tooltip-popover::after {
-  content: '';
-  position: absolute;
-  bottom: -12px;
-  left: 0;
-  right: 0;
-  height: 16px;
-  background: transparent;
+/* Tooltip Popover Flutuante Desacoplado (#jhe-floating-team-popover) */
+#jhe-floating-team-popover {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 25px -5px rgba(0, 0, 0, 0.6);
   pointer-events: auto;
 }
 
-.team-counter-wrapper:hover .team-popover,
-.team-counter-wrapper:hover .team-tooltip-popover,
-.team-popover:hover,
-.team-tooltip-popover:hover {
-  display: flex !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  transform: translateY(0) !important;
-  pointer-events: auto !important;
+/* Isolamento do estado de exportação */
+.team-popover,
+.team-tooltip-popover {
+  display: none !important;
 }
 
 .team-tooltip-header {

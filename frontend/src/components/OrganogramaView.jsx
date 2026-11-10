@@ -8,6 +8,7 @@ import { useTheme } from '../context/ThemeContext';
 import { buildAndSortOrgTree } from '../utils/treeBuilder';
 import CanvasControls from './CanvasControls';
 import { parseResponsaveis, formatResponsaveisText, getInitials, isPlaceholderResponsavel } from './MultiResponsavelInput';
+import { X, Briefcase, Mail } from 'lucide-react';
 
 /**
  * Mapa de cores indicadoras discretas por nível hierárquico JHE
@@ -249,6 +250,75 @@ const OrganogramaView = forwardRef(function OrganogramaView(
   const [isCanvasLocked, setIsCanvasLocked] = useState(false);
   const [modoVisao, setModoVisao] = useState('executivo'); // 'completo' | 'executivo'
   const hasInitializedTreeRef = useRef(false);
+
+  // Estado e Mapa do Popover Flutuante Desacoplado de Colaboradores
+  const [teamPopover, setTeamPopover] = useState(null);
+  const teamPopoverRef = useRef(teamPopover);
+  teamPopoverRef.current = teamPopover;
+  const hoverTimeoutRef = useRef(null);
+  const nodePopoverDataMapRef = useRef(new Map());
+
+  // Abertura / Posicionamento Dinâmico do Popover
+  const openPopoverForBadge = useCallback((badgeEl, isClick = false) => {
+    if (!badgeEl) return;
+    const nodeId = badgeEl.getAttribute('data-node-id');
+    if (!nodeId) return;
+
+    if (isClick && teamPopoverRef.current && teamPopoverRef.current.nodeId === nodeId && teamPopoverRef.current.isPinned) {
+      setTeamPopover(null);
+      return;
+    }
+
+    const data = nodePopoverDataMapRef.current.get(String(nodeId));
+    if (!data) return;
+
+    const rect = badgeEl.getBoundingClientRect();
+    const popoverWidth = 320;
+    const popoverMaxHeight = 300;
+
+    let left = rect.left + rect.width / 2 - popoverWidth / 2;
+    if (left < 16) left = 16;
+    if (left + popoverWidth > window.innerWidth - 16) {
+      left = window.innerWidth - 16 - popoverWidth;
+    }
+
+    let placement = 'top';
+    let top = rect.top - 8;
+    if (top - popoverMaxHeight < 16) {
+      placement = 'bottom';
+      top = rect.bottom + 8;
+    }
+
+    setTeamPopover({
+      nodeId,
+      pos: { x: left, y: top, placement },
+      data,
+      isPinned: isClick
+    });
+  }, []);
+
+  const handleBadgeMouseLeave = useCallback(() => {
+    if (teamPopoverRef.current?.isPinned) return;
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    hoverTimeoutRef.current = setTimeout(() => {
+      setTeamPopover((prev) => (prev?.isPinned ? prev : null));
+    }, 250);
+  }, []);
+
+  const handlePopoverMouseEnter = useCallback(() => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+  }, []);
+
+  const handlePopoverMouseLeave = useCallback(() => {
+    if (teamPopoverRef.current?.isPinned) return;
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    hoverTimeoutRef.current = setTimeout(() => {
+      setTeamPopover((prev) => (prev?.isPinned ? prev : null));
+    }, 250);
+  }, []);
 
   const niveisRef = useRef(niveis);
   niveisRef.current = niveis;
@@ -821,6 +891,7 @@ const OrganogramaView = forwardRef(function OrganogramaView(
         })
         // Clicar em um Card: centraliza, destaca automaticamente e abre detalhes
         .onNodeClick((nodeParam) => {
+          setTeamPopover(null);
           const targetId = nodeParam?.data?.id ?? nodeParam?.id ?? nodeParam;
           focusAndHighlightNode(targetId);
           const found = (dadosTratados || []).find((n) => String(n.id) === String(targetId));
@@ -1008,11 +1079,40 @@ const OrganogramaView = forwardRef(function OrganogramaView(
                 : `${diretosProprios} colaborador(es) direto(s) nesta unidade`);
 
           const tooltipTitulo = estaAberto || !temFilhosRecolhidos
-            ? 'Equipe Direta'
-            : 'Total no Ramo (Subárvore)';
+            ? 'Equipe Direta / Colaboradores'
+            : 'Total no Ramo';
 
           const membrosParaExibir = listaPessoas.length > 0 ? listaPessoas : membros;
-          const temScroll = membrosParaExibir.length >= 5;
+
+          // Atualiza o mapa de dados do Popover Flutuante desacoplado
+          nodePopoverDataMapRef.current.set(String(item.id), {
+            nodeId: String(item.id),
+            titulo: item.titulo || 'Setor',
+            sigla: item.sigla ? item.sigla.trim() : '',
+            nivelNome: item.nivel_nome || '',
+            corAcento,
+            valorBadge,
+            tooltipTitulo: estaAberto || !temFilhosRecolhidos ? 'Equipe Direta / Colaboradores' : 'Total no Ramo',
+            membros: (membrosParaExibir || []).map((m, idx) => {
+              if (typeof m === 'string') {
+                return {
+                  id: `m-${idx}`,
+                  nome: m,
+                  cargo: item.cargo_responsavel || 'Colaborador',
+                  email: '',
+                  iniciais: getInitials(m)
+                };
+              }
+              const mNome = m.nome || m.nome_completo || 'Colaborador';
+              return {
+                id: m.id || `m-${idx}`,
+                nome: mNome,
+                cargo: m.cargo || m.cargo_especialidade || m.role_global || item.cargo_responsavel || 'Colaborador',
+                email: m.email || m.email_corporativo || m.email_pessoal || '',
+                iniciais: m.iniciais || getInitials(mNome)
+              };
+            })
+          });
 
           return `
             <div class="org-card jhe-org-card jhe-custom-node-container rounded-2xl relative z-10 ${item.classe_css || 'jhe-level-diretoria'} ${
@@ -1092,24 +1192,32 @@ const OrganogramaView = forwardRef(function OrganogramaView(
                       `
                   }
 
-                  <!-- Badge da Equipe com Popover Tooltip -->
+                  <!-- Badge da Equipe Interativo (Popover desacoplado fora da árvore SVG) -->
                   <div class="team-counter-wrapper" style="position: relative !important; flex-shrink: 0 !important; display: inline-flex !important; align-items: center !important;">
-                    <div class="team-counter-badge shrink-0" style="
-                      min-height: 22px !important;
-                      height: 22px !important;
-                      display: inline-flex !important;
-                      align-items: center !important;
-                      gap: 4px !important;
-                      padding: 2px 8px !important;
-                      border-radius: 9999px !important;
-                      font-size: 11px !important;
-                      font-weight: 700 !important;
-                      box-sizing: border-box !important;
-                      flex-shrink: 0 !important;
-                      background-color: ${isDark ? (valorBadge === 0 ? 'rgba(30, 41, 59, 0.4)' : 'rgba(30, 41, 59, 0.9)') : (valorBadge === 0 ? 'rgba(241, 245, 249, 0.9)' : '#FFFBEB')} !important;
-                      color: ${isDark ? (valorBadge === 0 ? '#94A3B8' : '#E2E8F0') : (valorBadge === 0 ? '#94A3B8' : '#78350F')} !important;
-                      border: 1px solid ${isDark ? (valorBadge === 0 ? 'rgba(51, 65, 85, 0.5)' : 'rgba(51, 65, 85, 0.8)') : (valorBadge === 0 ? 'rgba(226, 232, 240, 0.7)' : 'rgba(253, 230, 138, 0.6)')} !important;
-                    " title="${textoTooltip}">
+                    <div 
+                      class="team-counter-badge shrink-0 cursor-pointer" 
+                      data-team-badge="true" 
+                      data-node-id="${item.id}"
+                      style="
+                        min-height: 22px !important;
+                        height: 22px !important;
+                        display: inline-flex !important;
+                        align-items: center !important;
+                        gap: 4px !important;
+                        padding: 2px 8px !important;
+                        border-radius: 9999px !important;
+                        font-size: 11px !important;
+                        font-weight: 700 !important;
+                        box-sizing: border-box !important;
+                        flex-shrink: 0 !important;
+                        cursor: pointer !important;
+                        background-color: ${isDark ? (valorBadge === 0 ? 'rgba(30, 41, 59, 0.4)' : 'rgba(30, 41, 59, 0.9)') : (valorBadge === 0 ? 'rgba(241, 245, 249, 0.9)' : '#FFFBEB')} !important;
+                        color: ${isDark ? (valorBadge === 0 ? '#94A3B8' : '#E2E8F0') : (valorBadge === 0 ? '#94A3B8' : '#78350F')} !important;
+                        border: 1px solid ${isDark ? (valorBadge === 0 ? 'rgba(51, 65, 85, 0.5)' : 'rgba(51, 65, 85, 0.8)') : (valorBadge === 0 ? 'rgba(226, 232, 240, 0.7)' : 'rgba(253, 230, 138, 0.6)')} !important;
+                        transition: transform 0.15s ease, background-color 0.15s ease !important;
+                      " 
+                      title="${textoTooltip}"
+                    >
                       <svg 
                         width="13" 
                         height="13" 
@@ -1117,64 +1225,12 @@ const OrganogramaView = forwardRef(function OrganogramaView(
                         fill="none" 
                         stroke="currentColor" 
                         stroke-width="2" 
-                        style="width: 13px !important; height: 13px !important; min-width: 13px !important; min-height: 13px !important; max-width: 13px !important; max-height: 13px !important; display: inline-block !important; flex-shrink: 0 !important; vertical-align: middle !important; opacity: ${valorBadge === 0 ? '0.4' : '0.7'} !important;"
+                        style="width: 13px !important; height: 13px !important; min-width: 13px !important; min-height: 13px !important; max-width: 13px !important; max-height: 13px !important; display: inline-block !important; flex-shrink: 0 !important; vertical-align: middle !important; opacity: ${valorBadge === 0 ? '0.4' : '0.7'} !important; pointer-events: none !important;"
                       >
                         <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
                         <circle cx="9" cy="7" r="4"/>
                       </svg>
-                      <span style="font-size: 11px !important; font-weight: 700 !important; line-height: 1 !important; display: inline-block !important; flex-shrink: 0 !important; white-space: nowrap !important;">${valorBadge}</span>
-                    </div>
-
-                    <!-- Wrapper do Popover de Membros Diretos (Oculto estritamente por default com display: none) -->
-                    <div class="team-popover no-export" style="display: none; position: absolute; bottom: calc(100% + 8px); right: 0; width: 18rem; ${temScroll ? 'max-height: 18rem;' : 'height: auto;'} flex-direction: column; background-color: ${isDark ? '#0F1E36' : '#FFFFFF'}; border: 1px solid ${isDark ? 'rgba(148, 163, 184, 0.22)' : 'rgba(226, 232, 240, 0.9)'}; border-radius: 16px; box-shadow: 0 20px 40px -5px rgba(0, 0, 0, 0.7); z-index: 999; overflow: hidden; box-sizing: border-box;">
-                      
-                      <!-- 1. Cabeçalho Fixo (Nunca é sobreposto e não rola) -->
-                      <div class="shrink-0 flex items-center justify-between px-3.5 py-2.5 bg-white border-b border-slate-100 select-none" style="${isDark ? 'background-color:#0F1E36; border-color:rgba(148,163,184,0.18);' : ''}">
-                        <div class="flex items-center gap-1.5">
-                          <span class="w-2 h-2 rounded-full bg-sky-500"></span>
-                          <span class="text-[10px] font-bold ${isDark ? 'text-slate-300' : 'text-slate-500'} uppercase tracking-wider">
-                            ${tooltipTitulo}
-                          </span>
-                        </div>
-                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-50 text-sky-700 border border-sky-100" style="${isDark ? 'background-color:rgba(97,203,232,0.18); color:#61CBE8; border-color:rgba(97,203,232,0.3);' : ''}">
-                          ${valorBadge}
-                        </span>
-                      </div>
-
-                      <!-- 2. Lista com Rolagem Exclusiva quando >= 5 pessoas; Fluida sem scrollbar quando < 5 -->
-                      <div class="${temScroll ? 'max-h-[210px] overflow-y-auto custom-scrollbar-subtle' : 'h-auto overflow-hidden'} flex-1 p-2 space-y-1 min-h-0">
-                        ${membrosParaExibir.length > 0 ? membrosParaExibir.map((m) => {
-                          const mNome = typeof m === 'string' ? m : m.nome || 'Colaborador';
-                          const mInitials = m.iniciais || (mNome || 'CO')
-                            .split(' ')
-                            .filter(Boolean)
-                            .slice(0, 2)
-                            .map((x) => x[0])
-                            .join('')
-                            .toUpperCase();
-                          const mCargo = m.cargo || m.cargo_especialidade || m.role_global || 'Colaborador';
-                          return `
-                            <div class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors" style="${isDark ? 'hover:background-color:rgba(255,255,255,0.06);' : ''}">
-                              <div class="w-7 h-7 shrink-0 rounded-full bg-slate-100 text-slate-700 text-[10px] font-bold flex items-center justify-center border border-slate-200" style="${isDark ? 'background-color:#1A2E4C; color:#CBD5E1; border-color:rgba(148,163,184,0.2);' : ''}">
-                                ${mInitials}
-                              </div>
-                              <div class="min-w-0 flex-1">
-                                <p class="text-xs font-semibold ${isDark ? 'text-slate-200' : 'text-slate-800'} truncate leading-tight" title="${mNome}">
-                                  ${mNome}
-                                </p>
-                                <p class="text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-400'} truncate" title="${mCargo}">
-                                  ${mCargo}
-                                </p>
-                              </div>
-                            </div>
-                          `;
-                        }).join('') : `
-                          <div class="py-2.5 text-center text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-400'} italic">
-                            Nenhum colaborador registrado.
-                          </div>
-                        `}
-                      </div>
-
+                      <span style="font-size: 11px !important; font-weight: 700 !important; line-height: 1 !important; display: inline-block !important; flex-shrink: 0 !important; white-space: nowrap !important; pointer-events: none !important;">${valorBadge}</span>
                     </div>
                   </div>
                 </div>
@@ -1224,9 +1280,12 @@ const OrganogramaView = forwardRef(function OrganogramaView(
     const container = d3ContainerRef.current;
 
     const handleWheelCapture = (e) => {
-      const tooltipBody = e.target.closest('.team-tooltip-body, .team-tooltip-popover, .team-popover');
-      if (tooltipBody) {
+      if (e.target.closest('#jhe-floating-team-popover')) {
         e.stopPropagation();
+        return;
+      }
+      if (teamPopoverRef.current) {
+        setTeamPopover(null);
       }
     };
 
@@ -1239,8 +1298,13 @@ const OrganogramaView = forwardRef(function OrganogramaView(
     if (!d3ContainerRef.current) return;
     const container = d3ContainerRef.current;
     const handleSvgClick = (e) => {
-      // Se o clique não foi em um card do nó (.jhe-org-card, .node, .jhe-expand-pill, .team-popover), trata como clique de fundo
-      if (!e.target.closest('.node') && !e.target.closest('.jhe-org-card') && !e.target.closest('.jhe-expand-pill') && !e.target.closest('.team-popover')) {
+      // Se clicou no badge ou no popover flutuante, não limpa
+      if (e.target.closest('[data-team-badge="true"]') || e.target.closest('#jhe-floating-team-popover')) {
+        return;
+      }
+
+      // Se o clique não foi em um card do nó (.jhe-org-card, .node, .jhe-expand-pill), trata como clique de fundo
+      if (!e.target.closest('.node') && !e.target.closest('.jhe-org-card') && !e.target.closest('.jhe-expand-pill')) {
         clearHighlight();
         if (onCanvasBackgroundClick) onCanvasBackgroundClick();
       }
@@ -1248,6 +1312,107 @@ const OrganogramaView = forwardRef(function OrganogramaView(
     container.addEventListener('click', handleSvgClick);
     return () => container.removeEventListener('click', handleSvgClick);
   }, [clearHighlight, onCanvasBackgroundClick]);
+
+  // Interações com o Badge de Contagem (Hover & Clique) para exibição do Popover Desacoplado
+  useEffect(() => {
+    if (!d3ContainerRef.current) return;
+    const container = d3ContainerRef.current;
+
+    const handleMouseOver = (e) => {
+      const badge = e.target.closest('[data-team-badge="true"]');
+      if (badge) {
+        if (hoverTimeoutRef.current) {
+          clearTimeout(hoverTimeoutRef.current);
+          hoverTimeoutRef.current = null;
+        }
+        openPopoverForBadge(badge, false);
+      }
+    };
+
+    const handleMouseOut = (e) => {
+      const badge = e.target.closest('[data-team-badge="true"]');
+      if (badge) {
+        handleBadgeMouseLeave();
+      }
+    };
+
+    const handleClickCapture = (e) => {
+      const badge = e.target.closest('[data-team-badge="true"]');
+      if (badge) {
+        e.stopPropagation();
+        e.preventDefault();
+        openPopoverForBadge(badge, true);
+        return;
+      }
+
+      // Se clicou no botão de expansão do nó ou em outro nó, fecha o popover
+      if (e.target.closest('.jhe-expand-pill') || e.target.closest('.node-button-div') || e.target.closest('.node')) {
+        setTeamPopover(null);
+        return;
+      }
+
+      // Se o clique foi fora do popover flutuante, fecha
+      if (!e.target.closest('#jhe-floating-team-popover') && teamPopoverRef.current) {
+        setTeamPopover(null);
+      }
+    };
+
+    container.addEventListener('mouseover', handleMouseOver);
+    container.addEventListener('mouseout', handleMouseOut);
+    container.addEventListener('click', handleClickCapture, true);
+
+    return () => {
+      container.removeEventListener('mouseover', handleMouseOver);
+      container.removeEventListener('mouseout', handleMouseOut);
+      container.removeEventListener('click', handleClickCapture, true);
+    };
+  }, [openPopoverForBadge, handleBadgeMouseLeave]);
+
+  // Listeners globais para fechar com Escape, clique fora ou redimensionamento
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setTeamPopover(null);
+      }
+    };
+
+    const handleWindowPointerDown = (e) => {
+      if (!teamPopoverRef.current) return;
+      if (e.target.closest('#jhe-floating-team-popover') || e.target.closest('[data-team-badge="true"]')) {
+        return;
+      }
+      setTeamPopover(null);
+    };
+
+    const handleWindowResize = () => {
+      if (teamPopoverRef.current) {
+        setTeamPopover(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('pointerdown', handleWindowPointerDown);
+    window.addEventListener('resize', handleWindowResize);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('pointerdown', handleWindowPointerDown);
+      window.removeEventListener('resize', handleWindowResize);
+    };
+  }, []);
+
+  // Fecha o popover em qualquer operação de Pan/Zoom no gráfico
+  useEffect(() => {
+    if (!chartRef.current) return;
+    const chartState = chartRef.current.getChartState?.();
+    if (chartState?.zoomBehavior) {
+      chartState.zoomBehavior.on('zoom.teamPopover', () => {
+        if (teamPopoverRef.current) {
+          setTeamPopover(null);
+        }
+      });
+    }
+  }, [flatNodes]);
 
   return (
     <div
@@ -1298,6 +1463,103 @@ const OrganogramaView = forwardRef(function OrganogramaView(
         onNewNode={onCreateNode}
         onOpenQuickGuide={onOpenQuickGuide}
       />
+
+      {/* Popover Flutuante Desacoplado de Colaboradores / Equipe */}
+      {teamPopover && (
+        <div
+          id="jhe-floating-team-popover"
+          role="dialog"
+          aria-label="Listagem de Colaboradores"
+          className="fixed z-[9999] w-80 bg-slate-900 border border-slate-700 text-white shadow-2xl rounded-2xl p-3.5 backdrop-blur-md select-none transition-all duration-150 animate-in fade-in"
+          style={{
+            left: `${teamPopover.pos.x}px`,
+            top: `${teamPopover.pos.y}px`,
+            transform: teamPopover.pos.placement === 'top' ? 'translateY(-100%)' : 'none',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 25px -5px rgba(0, 0, 0, 0.6)'
+          }}
+          onMouseEnter={handlePopoverMouseEnter}
+          onMouseLeave={handlePopoverMouseLeave}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Cabeçalho do Popover */}
+          <div className="flex items-start justify-between gap-2 pb-2.5 mb-2.5 border-b border-slate-700/80">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5 mb-1">
+                <span
+                  className="w-2 h-2 rounded-full shrink-0"
+                  style={{ backgroundColor: teamPopover.data.corAcento || '#38BDF8' }}
+                />
+                <h5 className="text-[11px] font-bold uppercase tracking-wider text-slate-300 truncate">
+                  {teamPopover.data.tooltipTitulo} ({teamPopover.data.valorBadge})
+                </h5>
+              </div>
+              <p className="text-xs font-semibold text-slate-100 truncate" title={teamPopover.data.titulo}>
+                {teamPopover.data.sigla ? `${teamPopover.data.sigla} • ` : ''}{teamPopover.data.titulo}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setTeamPopover(null);
+              }}
+              className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shrink-0"
+              title="Fechar listagem"
+            >
+              <X size={15} />
+            </button>
+          </div>
+
+          {/* Lista com rolagem suave */}
+          <div className="max-h-60 overflow-y-auto custom-scrollbar space-y-1.5 pr-1">
+            {teamPopover.data.membros.length > 0 ? (
+              teamPopover.data.membros.map((membro) => (
+                <div
+                  key={membro.id}
+                  className="flex items-center gap-2.5 p-2 rounded-xl bg-slate-800/50 hover:bg-slate-800 border border-slate-700/50 hover:border-slate-600 transition-colors"
+                >
+                  {/* Avatar Circular com Iniciais */}
+                  <div
+                    className="w-8 h-8 rounded-full shrink-0 flex items-center justify-center font-bold text-xs bg-slate-800 text-sky-400 border border-slate-700 shadow-sm"
+                    style={{
+                      backgroundColor: '#1E293B',
+                      color: '#38BDF8'
+                    }}
+                  >
+                    {membro.iniciais}
+                  </div>
+
+                  {/* Informações: Nome, Cargo, E-mail */}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-semibold text-slate-100 truncate" title={membro.nome}>
+                      {membro.nome}
+                    </p>
+                    <div className="flex items-center gap-1 text-[11px] text-slate-400 truncate" title={membro.cargo}>
+                      <Briefcase size={10} className="shrink-0 text-slate-400" />
+                      <span className="truncate">{membro.cargo}</span>
+                    </div>
+                    {membro.email ? (
+                      <a
+                        href={`mailto:${membro.email}`}
+                        className="flex items-center gap-1 text-[10.5px] text-sky-400/90 hover:text-sky-300 hover:underline truncate mt-0.5"
+                        title={membro.email}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Mail size={10} className="shrink-0 text-sky-400/70" />
+                        <span className="truncate">{membro.email}</span>
+                      </a>
+                    ) : null}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="py-4 text-center text-xs text-slate-400 italic">
+                Nenhum colaborador registrado nesta unidade.
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 });
