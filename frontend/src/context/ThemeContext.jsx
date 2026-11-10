@@ -4,23 +4,32 @@ const ThemeContext = createContext(null);
 
 export function ThemeProvider({ children }) {
   const [themePreference, setThemePreference] = useState(() => {
-    return localStorage.getItem('jhe_theme_preference') || localStorage.getItem('jhe_org_theme') || 'system';
+    return localStorage.getItem('jhe_theme_preference') || localStorage.getItem('jhe_org_theme') || 'dark';
   });
 
-  const [resolvedTheme, setResolvedTheme] = useState('light');
+  const [resolvedTheme, setResolvedTheme] = useState(() => {
+    const saved = localStorage.getItem('jhe_theme_preference') || localStorage.getItem('jhe_org_theme');
+    if (saved === 'light') return 'light';
+    if (saved === 'system') {
+      return typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)')?.matches ? 'dark' : 'light';
+    }
+    return 'dark';
+  });
 
   useEffect(() => {
     const root = document.documentElement;
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
     const applyTheme = () => {
-      let isDark = false;
-      if (themePreference === 'dark') {
-        isDark = true;
-      } else if (themePreference === 'light') {
+      let isDark = true;
+      if (themePreference === 'light') {
         isDark = false;
-      } else {
+      } else if (themePreference === 'dark') {
+        isDark = true;
+      } else if (themePreference === 'system') {
         isDark = mediaQuery.matches;
+      } else {
+        isDark = true;
       }
 
       const activeMode = isDark ? 'dark' : 'light';
@@ -74,7 +83,7 @@ export function useTheme() {
   if (!context) {
     // Fallback caso usado fora do Provider
     const [themePreference, setThemePreference] = useState(() => {
-      return localStorage.getItem('jhe_theme_preference') || 'system';
+      return localStorage.getItem('jhe_theme_preference') || 'dark';
     });
 
     useEffect(() => {
@@ -82,19 +91,23 @@ export function useTheme() {
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
       const applyTheme = () => {
-        let isDark = false;
-        if (themePreference === 'dark') {
-          isDark = true;
-        } else if (themePreference === 'light') {
+        let isDark = true;
+        if (themePreference === 'light') {
           isDark = false;
-        } else {
+        } else if (themePreference === 'dark') {
+          isDark = true;
+        } else if (themePreference === 'system') {
           isDark = mediaQuery.matches;
+        } else {
+          isDark = true;
         }
 
         if (isDark) {
           root.classList.add('dark');
+          root.setAttribute('data-theme', 'dark');
         } else {
           root.classList.remove('dark');
+          root.setAttribute('data-theme', 'light');
         }
       };
 
@@ -107,7 +120,7 @@ export function useTheme() {
       }
     }, [themePreference]);
 
-    return { themePreference, setThemePreference, theme: 'light', isDarkMode: false, toggleTheme: () => {} };
+    return { themePreference, setThemePreference, theme: 'dark', isDarkMode: true, toggleTheme: () => {} };
   }
   return context;
 }

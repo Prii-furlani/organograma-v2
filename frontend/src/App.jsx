@@ -249,7 +249,7 @@ function OrganogramaContent() {
   const [quickGuideModalOpen, setQuickGuideModalOpen] = useState(false);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
 
-  // Limpeza de eventuais caches obsoletos em localStorage de sessões anteriores
+  // Limpeza de eventuais caches obsoletos em localStorage e sessionStorage de sessões anteriores
   useEffect(() => {
     try {
       const keysObsoletas = [
@@ -257,9 +257,16 @@ function OrganogramaContent() {
         'jhe_nos_cache',
         'organograma_nodes_cache',
         'organograma_nos_cache',
-        'allNodesFlatCache'
+        'allNodesFlatCache',
+        'jhe_org_expanded_nodes',
+        'jhe_expanded_nodes',
+        'organograma_expanded',
+        'jhe_organograma_expansion_state'
       ];
-      keysObsoletas.forEach((key) => localStorage.removeItem(key));
+      keysObsoletas.forEach((key) => {
+        localStorage.removeItem(key);
+        sessionStorage.removeItem(key);
+      });
     } catch (_) {}
   }, []);
 

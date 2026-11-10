@@ -199,7 +199,8 @@ const OrganogramaView = forwardRef(function OrganogramaView(
   const { theme } = useTheme();
   const [renderError, setRenderError] = useState(null);
   const [isCanvasLocked, setIsCanvasLocked] = useState(false);
-  const [modoVisao, setModoVisao] = useState('completo'); // 'completo' | 'executivo'
+  const [modoVisao, setModoVisao] = useState('executivo'); // 'completo' | 'executivo'
+  const hasInitializedTreeRef = useRef(false);
 
   const niveisRef = useRef(niveis);
   niveisRef.current = niveis;
@@ -280,6 +281,60 @@ const OrganogramaView = forwardRef(function OrganogramaView(
     }
   }, []);
 
+  // Centralização Automática perfeita no Nó Raiz (CEOs) com zoom 1 (100%)
+  const recenterRootNode = useCallback((animate = true) => {
+    if (!chartRef.current) return;
+    try {
+      const chartState = chartRef.current.getChartState?.();
+      if (!chartState) return;
+      const { root, svg, zoomBehavior, centerG, duration } = chartState;
+      if (!root || !svg || !zoomBehavior) return;
+
+      const w = chartState.svgWidth || d3ContainerRef.current?.clientWidth || window.innerWidth;
+      const h = chartState.svgHeight || d3ContainerRef.current?.clientHeight || (window.innerHeight - 64);
+
+      const rootX = root.x ?? 0;
+      const rootY = root.y ?? 0;
+      const cardHeight = root.height || CARD_HEIGHT;
+      const centerY = rootY + cardHeight / 2;
+
+      // Centraliza geometricamente o card CEO na viewport com zoom travado em 1 (100%)
+      const transform = d3.zoomIdentity
+        .translate(w / 2, h / 2)
+        .scale(1)
+        .translate(-rootX, -centerY);
+
+      chartState.lastTransform = transform;
+
+      if (animate) {
+        svg.transition().duration(duration || 350).call(zoomBehavior.transform, transform);
+        if (centerG) {
+          centerG.transition().duration(duration || 350).attr('transform', 'translate(0,0)');
+        }
+      } else {
+        svg.call(zoomBehavior.transform, transform);
+        if (centerG) {
+          centerG.attr('transform', 'translate(0,0)');
+        }
+      }
+    } catch (err) {
+      console.warn('Erro ao recentralizar nó raiz CEOs:', err);
+    }
+  }, []);
+
+  // FitView Inteligente: se apenas a raiz estiver visível, recentraliza sem super-zoom; senão, enquadra a árvore
+  const handleFitView = useCallback(() => {
+    if (!chartRef.current || isCanvasLocked) return;
+    chartRef.current.clearHighlighting();
+    const chartState = chartRef.current.getChartState?.();
+    const root = chartState?.root;
+    if (!root || !root.children || root.children.length === 0) {
+      recenterRootNode(true);
+    } else {
+      chartRef.current.fit();
+    }
+  }, [isCanvasLocked, recenterRootNode]);
+
   // Limpa destaques visuais e re-renderiza o gráfico
   const clearHighlight = useCallback(() => {
     if (!chartRef.current) return;
@@ -345,7 +400,7 @@ const OrganogramaView = forwardRef(function OrganogramaView(
 
       try {
         const isDark = theme === 'dark';
-        const bg = isDark ? '#020931' : '#FFFFFF';
+        const bg = isDark ? '#0B132B' : '#FFFFFF';
         const dataStr = new Date().toISOString().slice(0, 10);
         const prefixo = modoVisao === 'executivo' ? 'organograma_executivo_jhe_' : 'organograma_completo_jhe_';
         const nomeArquivo = `${prefixo}${dataStr}`;
@@ -421,8 +476,8 @@ const OrganogramaView = forwardRef(function OrganogramaView(
           const posX = (pdfWidth - finalWidth) / 2;
           const posY = (pdfHeight - finalHeight) / 2;
 
-          // Preenchimento de fundo consistente
-          pdf.setFillColor(isDark ? 2 : 255, isDark ? 9 : 255, isDark ? 49 : 255);
+          // Preenchimento de fundo consistente (#0B132B em dark mode)
+          pdf.setFillColor(isDark ? 11 : 255, isDark ? 19 : 255, isDark ? 43 : 255);
           pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
 
           pdf.addImage(dataUrl, 'PNG', posX, posY, finalWidth, finalHeight);
@@ -489,9 +544,12 @@ const OrganogramaView = forwardRef(function OrganogramaView(
       },
       toggleExecutiveView() {
         handleToggleModoVisao();
+      },
+      recenterRoot() {
+        recenterRootNode(true);
       }
     }),
-    [focusAndHighlightNode, clearHighlight, handleExportCanvas, handleToggleModoVisao]
+    [focusAndHighlightNode, clearHighlight, handleExportCanvas, handleToggleModoVisao, recenterRootNode]
   );
 
   // Bloqueia ou desbloqueia o zoom/pan do D3 quando isCanvasLocked alterna
@@ -534,6 +592,7 @@ const OrganogramaView = forwardRef(function OrganogramaView(
       chartRef.current
         .container(d3ContainerRef.current)
         .data(flatNodes)
+        .initialExpandLevel(0)
         .layout('top')
         .compact(false)
         .nodeId((d) => d.id)
@@ -592,11 +651,14 @@ const OrganogramaView = forwardRef(function OrganogramaView(
         // Botão de Expansão/Colapso Minimalista (24px, fundo adaptativo, borda sutil e texto nítido)
         .buttonContent(({ node }) => {
           const isExpanded = Boolean(node.children);
-          const count = node.data?._directSubordinates ?? node.data?._directChildrenCount ?? 0;
+          const isNodeCeo = Number(node.data?.id) === 1 || node.data?.nivel_slug === 'ceo' || node.depth === 0;
+          const count = node.data?._directSubordinates ?? node.data?._directChildrenCount ?? (node._children ? node._children.length : 0);
+          const pillBorder = isDark ? (isNodeCeo ? '#E28743' : 'rgba(148,163,184,0.28)') : (isNodeCeo ? '#B4783C' : '#E2E8F0');
+          const pillColor = isDark ? (isNodeCeo ? '#E28743' : '#E2E8F0') : (isNodeCeo ? '#B4783C' : '#475569');
           return `
-            <div class="jhe-expand-pill" style="${isDark ? 'background-color:#0F1E36; border-color:rgba(148,163,184,0.28); color:#E2E8F0;' : ''}">
-              <span style="font-size:9px; line-height:1;">${isExpanded ? '▾' : '▸'}</span>
-              <span>${count}</span>
+            <div class="jhe-expand-pill" style="${isDark ? `background-color:#0F1E36; border-color:${pillBorder}; color:${pillColor};` : `border-color:${pillBorder}; color:${pillColor};`}">
+              <span style="font-size:9px; line-height:1;">${isExpanded ? '▼' : '▶'}</span>
+              <span style="font-size:10.5px; font-weight:700;">${count}</span>
             </div>
           `;
         })
@@ -629,7 +691,7 @@ const OrganogramaView = forwardRef(function OrganogramaView(
         // Design Executivo dos Cards (.nodeContent)
         .nodeContent((d) => {
           const item = d.data;
-          const isCeo = item.nivel_slug === 'ceo' || item.slug_nivel === 'ceo';
+          const isCeo = item.nivel_slug === 'ceo' || item.slug_nivel === 'ceo' || Number(item.id) === 1 || Number(item.nivel_id) === 1 || d.depth === 0;
           const isHighlighted = Boolean(item._highlighted);
 
           // Sincronização dinâmica da Cor de Destaque com o catálogo de níveis hierárquicos
@@ -650,15 +712,20 @@ const OrganogramaView = forwardRef(function OrganogramaView(
             getLevelAccentColor(item.nivel_slug || item.slug_nivel) ||
             '#0E284E';
 
-          // No modo escuro, se a cor configurada for muito escura (ex: #0E284E), usamos uma versão ligeiramente iluminada (#3B82F6) para o traço e badge
-          const corAcento =
-            isDark &&
-            (corNivel.trim().toUpperCase() === '#0E284E' ||
+          // No modo escuro, o nó CEO ganha destaque laranja/dourado (#E28743) institucional e outros tons ganham contraste
+          let corAcento = corNivel;
+          if (isDark) {
+            if (isCeo) {
+              corAcento = '#E28743'; // Destaque Laranja/Dourado Corporativo JHE
+            } else if (
+              corNivel.trim().toUpperCase() === '#0E284E' ||
               corNivel.trim().toUpperCase() === '#020931' ||
               corNivel.trim().toUpperCase() === '#0F172A' ||
-              corNivel.trim().toUpperCase() === '#0F3B66')
-              ? '#3B82F6'
-              : corNivel;
+              corNivel.trim().toUpperCase() === '#0F3B66'
+            ) {
+              corAcento = '#3B82F6';
+            }
+          }
 
           // Extrai múltiplos titulares combinando responsavel e lideres_secundarios
           let titularList = parseResponsaveis(item.responsavel);
@@ -775,12 +842,12 @@ const OrganogramaView = forwardRef(function OrganogramaView(
             }" 
                  style="
                    background: ${isDark 
-                     ? 'linear-gradient(180deg, #132238 0%, #0c1728 100%)' 
+                     ? (isCeo ? 'linear-gradient(180deg, #15253e 0%, #0c182c 100%)' : 'linear-gradient(180deg, #132238 0%, #0c1728 100%)') 
                      : '#FFFFFF'} !important;
-                   border: 1px solid ${isDark ? `${corAcento}35` : '#E2E8F0'} !important;
+                   border: 1px solid ${isDark ? (isCeo ? 'rgba(226, 135, 67, 0.55)' : `${corAcento}35`) : (isCeo ? '#B4783C' : '#E2E8F0')} !important;
                    border-top: 4px solid ${corAcento} !important;
                    box-shadow: ${isDark 
-                     ? `0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 0 15px -3px ${corAcento}15` 
+                     ? (isCeo ? '0 12px 32px -4px rgba(0, 0, 0, 0.75), 0 0 20px -2px rgba(226, 135, 67, 0.28)' : `0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 0 15px -3px ${corAcento}15`) 
                      : '0 4px 14px rgba(0, 0, 0, 0.05)'} !important;
                    width: 100%;
                    height: 100%;
@@ -792,7 +859,7 @@ const OrganogramaView = forwardRef(function OrganogramaView(
                 <div>
                   <div class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider mb-1.5">
                     <span 
-                      style="background-color: ${corAcento}; box-shadow: 0 0 6px ${corAcento}80;" 
+                      style="background-color: ${corAcento}; box-shadow: 0 0 8px ${corAcento}90;" 
                       class="w-2 h-2 rounded-full inline-block shrink-0"
                     ></span>
                     ${item.sigla && item.sigla.trim() ? `
@@ -918,8 +985,13 @@ const OrganogramaView = forwardRef(function OrganogramaView(
         })
         .render();
 
-      if (isFirstMount) {
-        chartRef.current.expandAll().fit();
+      // Estado Inicial Padrão: Árvore totalmente colapsada no nó raiz (CEOs) e perfeitamente centralizada
+      if (!hasInitializedTreeRef.current) {
+        hasInitializedTreeRef.current = true;
+        chartRef.current.collapseAll();
+        setTimeout(() => {
+          recenterRootNode(false);
+        }, 70);
       }
     } catch (err) {
       console.error('Erro ao renderizar D3 OrgChart:', err);
@@ -993,11 +1065,7 @@ const OrganogramaView = forwardRef(function OrganogramaView(
       <CanvasControls
         onZoomIn={() => !isCanvasLocked && chartRef.current?.zoomIn()}
         onZoomOut={() => !isCanvasLocked && chartRef.current?.zoomOut()}
-        onFit={() => {
-          if (isCanvasLocked) return;
-          chartRef.current?.clearHighlighting();
-          chartRef.current?.fit();
-        }}
+        onFit={handleFitView}
         onExpandAll={() => {
           if (isCanvasLocked) return;
           chartRef.current?.expandAll().fit();
@@ -1005,7 +1073,9 @@ const OrganogramaView = forwardRef(function OrganogramaView(
         }}
         onCollapseAll={() => {
           if (isCanvasLocked) return;
-          chartRef.current?.collapseAll().fit();
+          chartRef.current?.collapseAll();
+          recenterRootNode(true);
+          setModoVisao('executivo');
         }}
         modoVisao={modoVisao}
         onToggleModoVisao={handleToggleModoVisao}

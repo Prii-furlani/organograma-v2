@@ -55,13 +55,13 @@
    ============================================================================= */
 [data-theme="dark"],
 .dark {
-  --jhe-canvas-bg: #020931;
-  --jhe-canvas-bg-alt: #050E24;
+  --jhe-canvas-bg: #0B132B;
+  --jhe-canvas-bg-alt: #080E21;
   --jhe-surface-card: #0F1E36;
-  --jhe-surface-glass: rgba(15, 30, 54, 0.92);
-  --jhe-surface-subtle: #0A1629;
+  --jhe-surface-glass: rgba(11, 19, 43, 0.92);
+  --jhe-surface-subtle: #080E21;
   --jhe-avatar-subtle-bg: #1A2E4C;
-  --jhe-avatar-subtle-text: #61CBE8;
+  --jhe-avatar-subtle-text: #E28743;
   --jhe-text-main: #FFFFFF;
   --jhe-text-muted: #94A3B8;
   --jhe-border-subtle: rgba(148, 163, 184, 0.18);
@@ -196,6 +196,18 @@ svg.svg-chart-container .node-foreign-object {
 .jhe-expand-pill:hover {
   color: var(--jhe-text-main);
   border-color: #94A3B8;
+}
+
+.dark .jhe-expand-pill {
+  background-color: #0F1E36;
+  border-color: rgba(148, 163, 184, 0.28);
+  color: #E2E8F0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.dark .jhe-expand-pill:hover {
+  border-color: #E28743;
+  color: #E28743;
 }
 
 [data-theme="dark"] .jhe-expand-pill,

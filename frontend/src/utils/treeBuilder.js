@@ -125,6 +125,7 @@ export function buildAndSortOrgTree(rawNodes = []) {
       _isAssistant: Boolean(raw._isAssistant),
       _precedence: raw._isAssistant ? 1.5 : (SLUG_PRECEDENCE[slug] || 99),
       colaboradores_diretos: colabs,
+      _expanded: false,
       children: []
     });
   });
@@ -216,6 +217,7 @@ export function buildAndSortOrgTree(rawNodes = []) {
       const { children, ...cleanNode } = node;
       flatNodes.push({
         ...cleanNode,
+        _expanded: false,
         _depth: depth,
         _siblingIndex: indexAmongSiblings,
         _directChildrenCount: children.length
