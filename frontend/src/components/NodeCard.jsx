@@ -1,5 +1,4 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 
 /**
  * NodeCard - Componente de cartão individual do Organograma JHE
@@ -152,13 +151,3 @@ export default function NodeCard({
     </div>
   );
 }
-
-NodeCard.propTypes = {
-  node: PropTypes.object,
-  isExpanded: PropTypes.bool,
-  subordinatesCount: PropTypes.number,
-  handleToggleExpand: PropTypes.func,
-  onSelectNode: PropTypes.func,
-  isHighlighted: PropTypes.bool,
-  isDark: PropTypes.bool
-};

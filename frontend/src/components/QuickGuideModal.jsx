@@ -8,10 +8,14 @@ import {
   ShieldCheck,
   Search,
   Sliders,
-  ChevronRight,
   Sparkles,
   Layers,
-  MousePointerClick
+  MousePointerClick,
+  Network,
+  Crown,
+  GitFork,
+  CreditCard,
+  Cpu
 } from 'lucide-react';
 
 export default function QuickGuideModal({ isOpen, onClose }) {
@@ -24,6 +28,7 @@ export default function QuickGuideModal({ isOpen, onClose }) {
       id: 'navegacao',
       title: 'Navegação e Visualização',
       icon: Compass,
+      headerTitle: 'Navegação e Visualização',
       description: 'Como explorar a estrutura organizacional e localizar setores rapidamente.',
       cards: [
         {
@@ -53,6 +58,7 @@ export default function QuickGuideModal({ isOpen, onClose }) {
       id: 'topicos',
       title: 'Editor em Tópicos & Estrutura',
       icon: Layers,
+      headerTitle: 'Editor em Tópicos & Estrutura',
       description: 'Gestão visual da árvore hierárquica por meio de listas expansíveis e arrasto.',
       cards: [
         {
@@ -82,6 +88,7 @@ export default function QuickGuideModal({ isOpen, onClose }) {
       id: 'governanca',
       title: 'Perfis, Governança & Auditoria',
       icon: ShieldCheck,
+      headerTitle: 'Perfis, Governança & Auditoria',
       description: 'Controle de acesso por papel (RBAC), multi-vínculos e rastreabilidade total.',
       cards: [
         {
@@ -104,6 +111,49 @@ export default function QuickGuideModal({ isOpen, onClose }) {
           badge: 'Auditoria JHE',
           content:
             'Todas as alterações no organograma, inclusões de pessoas e movimentações são registradas com data, hora, IP e responsável, acessíveis pelo menu de perfil do administrador.'
+        }
+      ]
+    },
+    {
+      id: 'tree-architecture',
+      title: 'Estrutura dos Nós & Hierarquia',
+      icon: Network,
+      headerTitle: 'Estrutura dos Nós e Lógica Hierárquica',
+      description:
+        'Entenda como as relações de subordinação, os metadados dos cartões e o motor visual do organograma são processados.',
+      tip: (
+        <span>
+          <strong>💡 Dica de Governança:</strong> Movimentações entre diretorias e criação de novas coordenações refletem instantaneamente no cálculo das linhas conectoras e no censo total de colaboradores da área.
+        </span>
+      ),
+      cards: [
+        {
+          title: 'O Nó Raiz (Presidência / CEOs)',
+          icon: Crown,
+          badge: 'Nível Zero / Raiz',
+          content:
+            'O ponto de partida de toda a governança JHE. Não possui setor superior e centraliza todas as diretorias e coordenações. Inicia colapsado por padrão para oferecer uma navegação rápida e limpa.'
+        },
+        {
+          title: 'Cadeia de Subordinação (Árvore Hierárquica)',
+          icon: GitFork,
+          badge: 'Pai & Filho',
+          content:
+            'Cada unidade (Diretoria, Coordenação ou Equipe Técnica) conecta-se a um nó pai. Expandir um nó revela seus subordinados diretos e recalcula automaticamente o espaço do canvas.'
+        },
+        {
+          title: 'Metadados e Anatomia do Card',
+          icon: CreditCard,
+          badge: 'Anatomia do Nó',
+          content:
+            'Cada cartão exibe a categoria hierárquica, título da área, gestor titular, badge com contagem de membros diretos (que abre a lista de pessoas) e o botão inferior indicando o volume de subdivisões colapsadas.'
+        },
+        {
+          title: 'Motor de Layout & Conexões Vetoriais',
+          icon: Cpu,
+          badge: 'Engine Gráfica',
+          content:
+            'O algoritmo espacial distribui nós no plano 2D calculando larguras e alturas dinâmicas, desenhando linhas ortogonais em SVG que evitam colisões e mantêm a hierarquia perfeitamente legível.'
         }
       ]
     }
@@ -144,7 +194,7 @@ export default function QuickGuideModal({ isOpen, onClose }) {
         </div>
 
         {/* Abas Superiores no estilo Sabesp / Executivo */}
-        <div className="flex border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 px-6 gap-2 pt-3">
+        <div className="flex border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 px-6 gap-2 pt-3 overflow-x-auto scrollbar-none">
           {sections.map((sec) => {
             const Icon = sec.icon;
             const isActive = activeTab === sec.id;
@@ -153,7 +203,7 @@ export default function QuickGuideModal({ isOpen, onClose }) {
                 key={sec.id}
                 type="button"
                 onClick={() => setActiveTab(sec.id)}
-                className={`flex items-center gap-2 px-4 py-3 text-xs font-semibold rounded-t-xl transition-all cursor-pointer relative ${
+                className={`flex items-center gap-2 px-4 py-3 text-xs font-semibold rounded-t-xl transition-all cursor-pointer relative shrink-0 ${
                   isActive
                     ? 'bg-white dark:bg-slate-800 text-[#0E284E] dark:text-sky-400 border-t-2 border-t-[#0E284E] dark:border-t-sky-400 shadow-xs'
                     : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100/50 dark:hover:bg-slate-800/40'
@@ -170,14 +220,18 @@ export default function QuickGuideModal({ isOpen, onClose }) {
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           <div className="bg-sky-50/60 dark:bg-sky-950/30 border border-sky-100 dark:border-sky-900/50 rounded-2xl p-4">
             <h3 className="text-sm font-bold text-[#0E284E] dark:text-sky-300 mb-1">
-              {currentSection.title}
+              {currentSection.headerTitle || currentSection.title}
             </h3>
             <p className="text-xs text-slate-600 dark:text-slate-300">
               {currentSection.description}
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div
+            className={`grid grid-cols-1 ${
+              currentSection.cards.length === 4 ? 'sm:grid-cols-2' : 'md:grid-cols-3'
+            } gap-4`}
+          >
             {currentSection.cards.map((card, idx) => {
               const CardIcon = card.icon;
               return (
@@ -207,12 +261,18 @@ export default function QuickGuideModal({ isOpen, onClose }) {
           </div>
 
           {/* Dica Institucional de Governança */}
-          <div className="p-4 rounded-2xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200/80 dark:border-amber-900/40 flex items-start gap-3">
+          <div className="p-4 rounded-2xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-300/80 dark:border-amber-600/40 flex items-start gap-3">
             <div className="w-6 h-6 rounded-lg bg-amber-500 text-white flex items-center justify-center shrink-0 mt-0.5">
               <Sparkles size={13} />
             </div>
             <div className="text-xs text-amber-900 dark:text-amber-200 leading-relaxed">
-              <strong>Padrão de Qualidade JHE:</strong> Para preservar a integridade das auditorias e certificações técnicas (como OIA), certifique-se de que cada movimentação ou criação de área tenha o escopo de subordinação devidamente aprovado pela diretoria executiva.
+              {currentSection.tip ? (
+                currentSection.tip
+              ) : (
+                <>
+                  <strong>Padrão de Qualidade JHE:</strong> Para preservar a integridade das auditorias e certificações técnicas (como OIA), certifique-se de que cada movimentação ou criação de área tenha o escopo de subordinação devidamente aprovado pela diretoria executiva.
+                </>
+              )}
             </div>
           </div>
         </div>

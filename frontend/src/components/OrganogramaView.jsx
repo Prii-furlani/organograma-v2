@@ -570,8 +570,8 @@ const OrganogramaView = forwardRef(function OrganogramaView(
           format === 'pdf'
             ? 'Gerando prancha PDF sob medida...'
             : format === 'svg'
-            ? 'Gerando vetor SVG com estilos...'
-            : 'Gerando imagem em alta resolução...';
+              ? 'Gerando vetor SVG com estilos...'
+              : 'Gerando imagem em alta resolução...';
 
         Swal.fire({
           title: formatTitle,
@@ -741,7 +741,7 @@ const OrganogramaView = forwardRef(function OrganogramaView(
             el.style.removeProperty('visibility');
             el.style.removeProperty('opacity');
           });
-        } catch (_) {}
+        } catch (_) { }
         container.classList.remove('is-exporting');
       }
     },
@@ -1003,15 +1003,15 @@ const OrganogramaView = forwardRef(function OrganogramaView(
             return `
               <div style="display:inline-flex; align-items:center; flex-shrink:0; min-width:20px;">
                 ${lista.slice(0, 3).map((nome, idx) => {
-                  const inits = getInitials(nome);
-                  const bg = idx % 2 === 0
-                    ? (dark ? '#1A2E4C' : '#E2E8F0')
-                    : (dark ? 'rgba(180, 120, 60, 0.25)' : 'rgba(180, 120, 60, 0.16)');
-                  const col = idx % 2 === 0
-                    ? (dark ? '#93C5FD' : '#1E293B')
-                    : (dark ? '#FBBF24' : '#B4783C');
-                  const bdr = dark ? `${acento}40` : '#FFFFFF';
-                  return `
+              const inits = getInitials(nome);
+              const bg = idx % 2 === 0
+                ? (dark ? '#1A2E4C' : '#E2E8F0')
+                : (dark ? 'rgba(180, 120, 60, 0.25)' : 'rgba(180, 120, 60, 0.16)');
+              const col = idx % 2 === 0
+                ? (dark ? '#93C5FD' : '#1E293B')
+                : (dark ? '#FBBF24' : '#B4783C');
+              const bdr = dark ? `${acento}40` : '#FFFFFF';
+              return `
                     <span style="
                       width: 20px;
                       height: 20px;
@@ -1037,7 +1037,7 @@ const OrganogramaView = forwardRef(function OrganogramaView(
                       ${inits}
                     </span>
                   `;
-                }).join('')}
+            }).join('')}
               </div>
             `;
           };
@@ -1046,8 +1046,8 @@ const OrganogramaView = forwardRef(function OrganogramaView(
           const membros = (Array.isArray(d.data.membros_equipe) && d.data.membros_equipe.length > 0)
             ? d.data.membros_equipe
             : (Array.isArray(d.data.colaboradores_diretos) && d.data.colaboradores_diretos.length > 0
-                ? d.data.colaboradores_diretos
-                : []);
+              ? d.data.colaboradores_diretos
+              : []);
 
           const estaAberto = Boolean(d.children && d.children.length > 0);
           const temFilhosRecolhidos = Boolean(d._children && d._children.length > 0);
@@ -1072,11 +1072,11 @@ const OrganogramaView = forwardRef(function OrganogramaView(
           const totalAcumulado = d.data.total_equipe_acumulada ?? diretosProprios;
           const valorBadge = estaAberto ? diretosProprios : totalAcumulado;
 
-          const textoTooltip = estaAberto 
-            ? `${diretosProprios} colaborador(es) direto(s) nesta unidade` 
+          const textoTooltip = estaAberto
+            ? `${diretosProprios} colaborador(es) direto(s) nesta unidade`
             : (temFilhosRecolhidos
-                ? `${totalAcumulado} colaborador(es) no total da área (incluindo subordinados)`
-                : `${diretosProprios} colaborador(es) direto(s) nesta unidade`);
+              ? `${totalAcumulado} colaborador(es) no total da área (incluindo subordinados)`
+              : `${diretosProprios} colaborador(es) direto(s) nesta unidade`);
 
           const tooltipTitulo = estaAberto || !temFilhosRecolhidos
             ? 'Equipe Direta / Colaboradores'
@@ -1115,8 +1115,7 @@ const OrganogramaView = forwardRef(function OrganogramaView(
           });
 
           return `
-            <div class="org-card jhe-org-card jhe-custom-node-container rounded-2xl relative z-10 ${item.classe_css || 'jhe-level-diretoria'} ${
-              isHighlighted ? 'is-highlighted' : ''
+            <div class="org-card jhe-org-card jhe-custom-node-container rounded-2xl relative z-10 ${item.classe_css || 'jhe-level-diretoria'} ${isHighlighted ? 'is-highlighted' : ''
             }" 
                  style="
                    position: relative !important;
@@ -1127,15 +1126,15 @@ const OrganogramaView = forwardRef(function OrganogramaView(
                    overflow: hidden !important;
                    border-radius: 16px !important;
                    background-color: ${isDark ? (isCeo ? '#0F172A' : '#0B132B') : '#FFFFFF'} !important;
-                   background-image: ${isDark 
-                     ? (isCeo ? 'linear-gradient(180deg, #15253E 0%, #0C182C 100%)' : 'linear-gradient(180deg, #132238 0%, #0C1728 100%)') 
-                     : 'none'} !important;
+                   background-image: ${isDark
+              ? (isCeo ? 'linear-gradient(180deg, #15253E 0%, #0C182C 100%)' : 'linear-gradient(180deg, #132238 0%, #0C1728 100%)')
+              : 'none'} !important;
                    border: 1px solid ${isDark ? (isCeo ? 'rgba(226, 135, 67, 0.65)' : `${corAcento}40`) : (isCeo ? '#B4783C' : '#E2E8F0')} !important;
                    border-top: 4px solid ${corAcento} !important;
                    color: ${isDark ? '#FFFFFF' : '#0F172A'} !important;
-                   box-shadow: ${isDark 
-                     ? (isCeo ? '0 12px 32px -4px rgba(0, 0, 0, 0.75), 0 0 20px -2px rgba(226, 135, 67, 0.28)' : `0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 0 15px -3px ${corAcento}15`) 
-                     : '0 4px 14px rgba(0, 0, 0, 0.05)'} !important;
+                   box-shadow: ${isDark
+              ? (isCeo ? '0 12px 32px -4px rgba(0, 0, 0, 0.75), 0 0 20px -2px rgba(226, 135, 67, 0.28)' : `0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 0 15px -3px ${corAcento}15`)
+              : '0 4px 14px rgba(0, 0, 0, 0.05)'} !important;
                  ">
               <div class="p-3.5 flex flex-col justify-between h-full"
                    style="
@@ -1183,10 +1182,9 @@ const OrganogramaView = forwardRef(function OrganogramaView(
                 </div>
 
                 <!-- Rodapé: Gestor ou Equipe Direta e Contador de Equipe -->
-                <div style="display: flex !important; align-items: center !important; justify-content: space-between !important; min-height: 28px !important; padding-top: 6px !important; margin-top: 6px !important; border-top: 1px solid ${isDark ? 'rgba(51, 65, 85, 0.6)' : '#F1F5F9'} !important; width: 100% !important; box-sizing: border-box !important;">
-                  ${
-                    temGestorReal
-                      ? `
+                <div style="display: flex !important; align-items: center !important; justify-content: space-between !important; min-height: 28px !important; padding-top: 6px !important; margin-top: 10px !important; border-top: 1px solid ${isDark ? 'rgba(51, 65, 85, 0.6)' : '#F1F5F9'} !important; width: 100% !important; box-sizing: border-box !important;">
+                  ${temGestorReal
+              ? `
                         <!-- Caso Tenha Gestor Formal -->
                         <div style="display: flex !important; align-items: center !important; gap: 7px !important; min-width: 0 !important; max-width: 140px !important; padding-right: 4px !important; overflow: hidden !important;">
                           ${renderAvataresHtml(titularesReais, isDark, corAcento)}
@@ -1195,7 +1193,7 @@ const OrganogramaView = forwardRef(function OrganogramaView(
                           </span>
                         </div>
                       `
-                      : `
+              : `
                         <!-- Caso NÃO Tenha Gestor: Foco na Equipe Direta/Operacional -->
                         <div style="display: flex !important; align-items: center !important; gap: 6px !important; min-width: 0 !important; max-width: 140px !important; padding-right: 4px !important; overflow: hidden !important;">
                           <span style="font-size: 10px !important; font-weight: 500 !important; letter-spacing: -0.01em !important; color: ${isDark ? '#64748B' : '#94A3B8'} !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; max-width: 130px !important;">
@@ -1203,7 +1201,7 @@ const OrganogramaView = forwardRef(function OrganogramaView(
                           </span>
                         </div>
                       `
-                  }
+            }
 
                   <!-- Badge da Equipe Interativo (Popover desacoplado fora da árvore SVG) -->
                   <div class="team-counter-wrapper" style="position: relative !important; flex-shrink: 0 !important; display: inline-flex !important; align-items: center !important;">
@@ -1446,9 +1444,8 @@ const OrganogramaView = forwardRef(function OrganogramaView(
         <div
           id="organograma-tree-content"
           ref={d3ContainerRef}
-          className={`w-full h-full ${
-            isCanvasLocked ? 'cursor-default' : 'cursor-grab active:cursor-grabbing'
-          }`}
+          className={`w-full h-full ${isCanvasLocked ? 'cursor-default' : 'cursor-grab active:cursor-grabbing'
+            }`}
         />
       )}
 
