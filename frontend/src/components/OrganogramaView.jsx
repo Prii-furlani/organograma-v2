@@ -530,6 +530,14 @@ const OrganogramaView = forwardRef(function OrganogramaView(
           svgEl.setAttribute('height', `${totalTreeHeight}`);
         }
 
+        // Remove / oculta explicitamente do DOM todos os popovers antes da captura
+        const popovers = container.querySelectorAll('.team-popover, .team-tooltip-popover, .no-export');
+        popovers.forEach((el) => {
+          el.style.setProperty('display', 'none', 'important');
+          el.style.setProperty('visibility', 'hidden', 'important');
+          el.style.setProperty('opacity', '0', 'important');
+        });
+
         // Aguarda estabilização do repaint do navegador
         await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -540,10 +548,16 @@ const OrganogramaView = forwardRef(function OrganogramaView(
           height: totalTreeHeight,
           backgroundColor: bg,
           filter: (node) => {
-            if (!node || !node.classList) return true;
-            if (node.classList.contains('no-export')) return false;
-            if (node.classList.contains('team-popover')) return false;
-            if (node.classList.contains('team-tooltip-popover')) return false;
+            if (!node) return true;
+            if (node.nodeType === 1) {
+              const cl = node.classList;
+              if (cl) {
+                if (cl.contains('no-export')) return false;
+                if (cl.contains('team-popover')) return false;
+                if (cl.contains('team-tooltip-popover')) return false;
+                if (cl.contains('canvas-controls-floating')) return false;
+              }
+            }
             return true;
           },
           style: {
@@ -651,6 +665,12 @@ const OrganogramaView = forwardRef(function OrganogramaView(
           if (svgEl && zoomBehavior && lastTransform) {
             d3.select(svgEl).call(zoomBehavior.transform, lastTransform);
           }
+          const popovers = container.querySelectorAll('.team-popover, .team-tooltip-popover, .no-export');
+          popovers.forEach((el) => {
+            el.style.removeProperty('display');
+            el.style.removeProperty('visibility');
+            el.style.removeProperty('opacity');
+          });
         } catch (_) {}
         container.classList.remove('is-exporting');
       }
@@ -995,62 +1015,77 @@ const OrganogramaView = forwardRef(function OrganogramaView(
           const temScroll = membrosParaExibir.length >= 5;
 
           return `
-            <div class="org-card jhe-org-card jhe-custom-node-container rounded-2xl transition-all duration-200 overflow-visible relative z-10 ${item.classe_css || 'jhe-level-diretoria'} ${
+            <div class="org-card jhe-org-card jhe-custom-node-container rounded-2xl relative z-10 ${item.classe_css || 'jhe-level-diretoria'} ${
               isHighlighted ? 'is-highlighted' : ''
             }" 
                  style="
-                   background: ${isDark 
-                     ? (isCeo ? 'linear-gradient(180deg, #15253e 0%, #0c182c 100%)' : 'linear-gradient(180deg, #132238 0%, #0c1728 100%)') 
-                     : '#FFFFFF'} !important;
-                   border: 1px solid ${isDark ? (isCeo ? 'rgba(226, 135, 67, 0.55)' : `${corAcento}35`) : (isCeo ? '#B4783C' : '#E2E8F0')} !important;
+                   position: relative !important;
+                   width: 100% !important;
+                   height: 100% !important;
+                   min-height: 140px !important;
+                   box-sizing: border-box !important;
+                   overflow: hidden !important;
+                   border-radius: 16px !important;
+                   background-color: ${isDark ? (isCeo ? '#0F172A' : '#0B132B') : '#FFFFFF'} !important;
+                   background-image: ${isDark 
+                     ? (isCeo ? 'linear-gradient(180deg, #15253E 0%, #0C182C 100%)' : 'linear-gradient(180deg, #132238 0%, #0C1728 100%)') 
+                     : 'none'} !important;
+                   border: 1px solid ${isDark ? (isCeo ? 'rgba(226, 135, 67, 0.65)' : `${corAcento}40`) : (isCeo ? '#B4783C' : '#E2E8F0')} !important;
                    border-top: 4px solid ${corAcento} !important;
+                   color: ${isDark ? '#FFFFFF' : '#0F172A'} !important;
                    box-shadow: ${isDark 
                      ? (isCeo ? '0 12px 32px -4px rgba(0, 0, 0, 0.75), 0 0 20px -2px rgba(226, 135, 67, 0.28)' : `0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 0 15px -3px ${corAcento}15`) 
                      : '0 4px 14px rgba(0, 0, 0, 0.05)'} !important;
-                   width: 100%;
-                   height: 100%;
-                   box-sizing: border-box;
                  ">
-              <div class="p-3.5 flex flex-col justify-between h-full" style="box-sizing: border-box; height: 100%; overflow: hidden; max-height: 140px;">
+              <div class="p-3.5 flex flex-col justify-between h-full"
+                   style="
+                     box-sizing: border-box !important;
+                     width: 100% !important;
+                     height: 100% !important;
+                     max-height: 140px !important;
+                     padding: 14px !important;
+                     display: flex !important;
+                     flex-direction: column !important;
+                     justify-content: space-between !important;
+                     overflow: hidden !important;
+                   ">
                 
                 <!-- Topo: Ponto Colorido do Nível + Sigla + Nome do Nível -->
-                <div style="overflow: hidden;">
-                  <div class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider mb-1.5">
+                <div style="overflow: hidden !important; width: 100% !important;">
+                  <div style="display: flex !important; align-items: center !important; gap: 6px !important; font-size: 10px !important; font-weight: 700 !important; text-transform: uppercase !important; letter-spacing: 0.05em !important; margin-bottom: 6px !important; width: 100% !important; overflow: hidden !important;">
                     <span 
-                      style="background-color: ${corAcento}; box-shadow: 0 0 8px ${corAcento}90;" 
-                      class="w-2 h-2 rounded-full inline-block shrink-0"
+                      style="width: 8px !important; height: 8px !important; min-width: 8px !important; min-height: 8px !important; max-width: 8px !important; max-height: 8px !important; border-radius: 9999px !important; background-color: ${corAcento} !important; box-shadow: 0 0 8px ${corAcento}90 !important; display: inline-block !important; flex-shrink: 0 !important;"
                     ></span>
                     ${item.sigla && item.sigla.trim() ? `
-                      <span class="${isDark ? 'text-slate-200' : 'text-slate-800'} font-bold">${item.sigla.trim()}</span>
-                      <span class="text-slate-500">•</span>
+                      <span style="color: ${isDark ? '#E2E8F0' : '#1E293B'} !important; font-weight: 700 !important; flex-shrink: 0 !important;">${item.sigla.trim()}</span>
+                      <span style="color: #64748B !important; flex-shrink: 0 !important;">•</span>
                     ` : ''}
-                    <span class="${isDark ? 'text-slate-400' : 'text-slate-500'} font-medium">${item.nivel_nome || ''}</span>
+                    <span style="color: ${isDark ? '#94A3B8' : '#64748B'} !important; font-weight: 500 !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important;">${item.nivel_nome || ''}</span>
                   </div>
                   
                   <!-- Título do Setor -->
-                  <h4 class="${isDark ? 'text-white' : 'text-slate-900'} font-bold text-xs leading-snug line-clamp-2"
-                      style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; max-height: 34px; line-height: 17px; word-break: break-word;">
+                  <h4 style="color: ${isDark ? '#FFFFFF' : '#0F172A'} !important; font-weight: 700 !important; font-size: 12px !important; line-height: 17px !important; margin: 0 !important; padding: 0 !important; display: -webkit-box !important; -webkit-line-clamp: 2 !important; -webkit-box-orient: vertical !important; overflow: hidden !important; text-overflow: ellipsis !important; max-height: 34px !important; word-break: break-word !important;">
                     ${item.titulo}
                   </h4>
                 </div>
 
                 <!-- Rodapé: Gestor ou Equipe Direta e Contador de Equipe -->
-                <div class="pt-2.5 mt-2 border-t ${isDark ? 'border-slate-800/80' : 'border-slate-100'} flex items-center justify-between min-h-[32px]">
+                <div style="display: flex !important; align-items: center !important; justify-content: space-between !important; min-height: 32px !important; padding-top: 10px !important; margin-top: 8px !important; border-top: 1px solid ${isDark ? 'rgba(51, 65, 85, 0.6)' : '#F1F5F9'} !important; width: 100% !important; box-sizing: border-box !important;">
                   ${
                     temGestorReal
                       ? `
                         <!-- Caso Tenha Gestor Formal -->
-                        <div class="flex items-center gap-2 min-w-0 pr-2">
+                        <div style="display: flex !important; align-items: center !important; gap: 8px !important; min-width: 0 !important; padding-right: 8px !important; overflow: hidden !important; flex: 1 !important;">
                           ${renderAvataresHtml(titularesReais, isDark, corAcento)}
-                          <span class="text-[11px] font-medium truncate ${isDark ? 'text-slate-300' : 'text-slate-700'}" title="${formattedLeadersText}">
+                          <span style="font-size: 11px !important; font-weight: 500 !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; color: ${isDark ? '#CBD5E1' : '#334155'} !important;" title="${formattedLeadersText}">
                             ${formattedLeadersText}
                           </span>
                         </div>
                       `
                       : `
                         <!-- Caso NÃO Tenha Gestor: Foco na Equipe Direta/Operacional -->
-                        <div class="flex items-center gap-1.5 min-w-0 pr-2">
-                          <span class="text-[10px] font-medium tracking-tight ${isDark ? 'text-slate-500' : 'text-slate-400'}">
+                        <div style="display: flex !important; align-items: center !important; gap: 6px !important; min-width: 0 !important; padding-right: 8px !important; overflow: hidden !important; flex: 1 !important;">
+                          <span style="font-size: 10px !important; font-weight: 500 !important; letter-spacing: -0.01em !important; color: ${isDark ? '#64748B' : '#94A3B8'} !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important;">
                             ${membros.length > 0 ? `${membros.length} colaborador(es)` : 'Sem gestor titular'}
                           </span>
                         </div>
@@ -1058,16 +1093,23 @@ const OrganogramaView = forwardRef(function OrganogramaView(
                   }
 
                   <!-- Badge da Equipe com Popover Tooltip -->
-                  <div class="team-counter-wrapper" style="position: relative; flex-shrink: 0;">
-                    <div class="team-counter-badge shrink-0 px-2 py-0.5 rounded-full flex items-center gap-1 text-[11px] font-bold ${
-                      isDark 
-                        ? (valorBadge === 0 
-                            ? 'bg-slate-800/40 text-slate-400 border border-slate-700/50' 
-                            : 'bg-slate-800/90 text-slate-200 border border-slate-700/80')
-                        : (valorBadge === 0 
-                            ? 'bg-slate-100/90 text-slate-400 border border-slate-200/70' 
-                            : 'bg-amber-50 text-amber-900 border border-amber-200/60')
-                    }" style="min-height: 22px; height: 22px; display: inline-flex; align-items: center; box-sizing: border-box;" title="${textoTooltip}">
+                  <div class="team-counter-wrapper" style="position: relative !important; flex-shrink: 0 !important; display: inline-flex !important; align-items: center !important;">
+                    <div class="team-counter-badge shrink-0" style="
+                      min-height: 22px !important;
+                      height: 22px !important;
+                      display: inline-flex !important;
+                      align-items: center !important;
+                      gap: 4px !important;
+                      padding: 2px 8px !important;
+                      border-radius: 9999px !important;
+                      font-size: 11px !important;
+                      font-weight: 700 !important;
+                      box-sizing: border-box !important;
+                      flex-shrink: 0 !important;
+                      background-color: ${isDark ? (valorBadge === 0 ? 'rgba(30, 41, 59, 0.4)' : 'rgba(30, 41, 59, 0.9)') : (valorBadge === 0 ? 'rgba(241, 245, 249, 0.9)' : '#FFFBEB')} !important;
+                      color: ${isDark ? (valorBadge === 0 ? '#94A3B8' : '#E2E8F0') : (valorBadge === 0 ? '#94A3B8' : '#78350F')} !important;
+                      border: 1px solid ${isDark ? (valorBadge === 0 ? 'rgba(51, 65, 85, 0.5)' : 'rgba(51, 65, 85, 0.8)') : (valorBadge === 0 ? 'rgba(226, 232, 240, 0.7)' : 'rgba(253, 230, 138, 0.6)')} !important;
+                    " title="${textoTooltip}">
                       <svg 
                         width="13" 
                         height="13" 
@@ -1075,17 +1117,16 @@ const OrganogramaView = forwardRef(function OrganogramaView(
                         fill="none" 
                         stroke="currentColor" 
                         stroke-width="2" 
-                        class="w-3 h-3 ${valorBadge === 0 ? 'opacity-40' : 'opacity-70'}"
-                        style="width: 13px; height: 13px; min-width: 13px; min-height: 13px; max-width: 13px; max-height: 13px; display: inline-block; flex-shrink: 0; vertical-align: middle;"
+                        style="width: 13px !important; height: 13px !important; min-width: 13px !important; min-height: 13px !important; max-width: 13px !important; max-height: 13px !important; display: inline-block !important; flex-shrink: 0 !important; vertical-align: middle !important; opacity: ${valorBadge === 0 ? '0.4' : '0.7'} !important;"
                       >
                         <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
                         <circle cx="9" cy="7" r="4"/>
                       </svg>
-                      <span style="font-size: 11px; font-weight: 700; line-height: 1; display: inline-block; flex-shrink: 0; white-space: nowrap;">${valorBadge}</span>
+                      <span style="font-size: 11px !important; font-weight: 700 !important; line-height: 1 !important; display: inline-block !important; flex-shrink: 0 !important; white-space: nowrap !important;">${valorBadge}</span>
                     </div>
 
-                    <!-- Wrapper do Popover de Membros Diretos -->
-                    <div class="team-popover no-export absolute bottom-full right-0 mb-2 w-72 ${temScroll ? 'max-h-72' : 'h-auto'} flex flex-col bg-white rounded-2xl shadow-2xl border border-slate-200/90 z-[999] pointer-events-auto overflow-hidden" style="${isDark ? 'background-color:#0F1E36; border-color:rgba(148,163,184,0.22);' : ''}">
+                    <!-- Wrapper do Popover de Membros Diretos (Oculto estritamente por default com display: none) -->
+                    <div class="team-popover no-export" style="display: none; position: absolute; bottom: calc(100% + 8px); right: 0; width: 18rem; ${temScroll ? 'max-height: 18rem;' : 'height: auto;'} flex-direction: column; background-color: ${isDark ? '#0F1E36' : '#FFFFFF'}; border: 1px solid ${isDark ? 'rgba(148, 163, 184, 0.22)' : 'rgba(226, 232, 240, 0.9)'}; border-radius: 16px; box-shadow: 0 20px 40px -5px rgba(0, 0, 0, 0.7); z-index: 999; overflow: hidden; box-sizing: border-box;">
                       
                       <!-- 1. Cabeçalho Fixo (Nunca é sobreposto e não rola) -->
                       <div class="shrink-0 flex items-center justify-between px-3.5 py-2.5 bg-white border-b border-slate-100 select-none" style="${isDark ? 'background-color:#0F1E36; border-color:rgba(148,163,184,0.18);' : ''}">

@@ -712,7 +712,7 @@ svg.svg-chart-container .node-foreign-object {
   right: 0;
   width: 18rem;
   max-height: 16rem;
-  display: flex;
+  display: none;
   flex-direction: column;
   overflow: hidden;
   background-color: var(--jhe-surface-card);
@@ -753,6 +753,7 @@ svg.svg-chart-container .node-foreign-object {
 .team-counter-wrapper:hover .team-tooltip-popover,
 .team-popover:hover,
 .team-tooltip-popover:hover {
+  display: flex !important;
   opacity: 1 !important;
   visibility: visible !important;
   transform: translateY(0) !important;
