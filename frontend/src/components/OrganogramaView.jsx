@@ -20,8 +20,12 @@ function getLevelAccentColor(slug = '') {
   return '#64748B';
 }
 
+const CARD_WIDTH = 260;
 const CARD_HEIGHT = 140;
-const MARGEM_PADRAO = 90; // Respiro visual entre as camadas no estado recolhido
+const VERTICAL_GAP = 95; // Espaçamento vertical entre a base do pai e o topo do filho (80px - 100px)
+const HORIZONTAL_GAP = 45; // Espaçamento horizontal mínimo entre nós irmãos contíguos (>= 40px)
+const NEIGHBOUR_GAP = 60; // Espaçamento entre blocos de subárvores vizinhas
+const MARGEM_PADRAO = VERTICAL_GAP; // Respiro visual entre as camadas no estado recolhido
 
 /**
  * Helper: Identifica se um nó é filho imediato de Co-CEOs (ID 1 ou depth 0)
@@ -115,10 +119,30 @@ const calcularDeslocamentoVerticalDinamico = (rootNode) => {
 };
 
 /**
+ * Helper: Calcula os limites horizontais reais de uma subárvore (considerando todos os nós descendentes abertos)
+ */
+function getSubtreeBounds(node) {
+  const nodeW = node.width || CARD_WIDTH;
+  let minX = node.x - nodeW / 2;
+  let maxX = node.x + nodeW / 2;
+
+  if (node.children && node.children.length > 0) {
+    node.descendants().forEach((desc) => {
+      const w = desc.width || CARD_WIDTH;
+      const left = desc.x - w / 2;
+      const right = desc.x + w / 2;
+      if (left < minX) minX = left;
+      if (right > maxX) maxX = right;
+    });
+  }
+  return { minX, maxX, width: maxX - minX };
+}
+
+/**
  * Layout Handler: Reorganiza os filhos imediatos do nó raiz ("Co-CEOs") em dois andares horizontais distintos:
  * - Andar Superior (Linha 1): Qualquer nível hierárquico sob o CEO que NÃO seja Diretoria Executiva
  * - Andar Inferior (Linha 2): Estritamente Diretorias Executivas e suas subárvores subordinadas
- * - Comportamento Dinâmico: A distância entre os andares se adapta dinamicamente à expansão da Linha 1
+ * - Prevenção Estrita de Colisão: Assegura que nenhum nó filho contíguo colida ou se sobreponha (ex: Apoio ao Compliance e Consultoria).
  */
 function organizarFilhosEmDoisAndares(rootNode) {
   if (!rootNode || !Array.isArray(rootNode.children) || rootNode.children.length === 0) {
@@ -141,41 +165,65 @@ function organizarFilhosEmDoisAndares(rootNode) {
     return;
   }
 
-  const CARD_WIDTH = 260;
-  const SIBLING_MARGIN = 35;
   // Deslocamento vertical dinâmico baseado no estado de nós abertos na Linha 1
   const Y_OFFSET_LINHA_2 = calcularDeslocamentoVerticalDinamico(rootNode);
 
-  // 1. Andar Superior (Linha 1): Nós não-Diretoria centralizados sob o eixo de Co-CEOs
+  // 1. Andar Superior (Linha 1): Garante espaçamento livre entre subárvores contíguas
   if (linha1Nodes.length > 0) {
-    const totalWidthL1 = linha1Nodes.length * CARD_WIDTH + (linha1Nodes.length - 1) * SIBLING_MARGIN;
-    const startX1 = rootNode.x - totalWidthL1 / 2 + CARD_WIDTH / 2;
+    linha1Nodes.sort((a, b) => a.x - b.x);
 
+    let currentRightLimit = -Infinity;
     linha1Nodes.forEach((node, idx) => {
-      const targetX = startX1 + idx * (CARD_WIDTH + SIBLING_MARGIN);
-      const deltaXCoord = targetX - node.x;
-
-      // Translada a coordenação e todos os seus eventuais filhos/descendentes abertos em bloco
-      if (deltaXCoord !== 0) {
+      const bounds = getSubtreeBounds(node);
+      if (idx > 0 && bounds.minX < currentRightLimit + HORIZONTAL_GAP) {
+        const shiftX = (currentRightLimit + HORIZONTAL_GAP) - bounds.minX;
         node.descendants().forEach((desc) => {
-          desc.x += deltaXCoord;
+          desc.x += shiftX;
         });
       }
+      const updatedBounds = getSubtreeBounds(node);
+      currentRightLimit = updatedBounds.maxX;
+    });
+
+    // Centraliza o bloco inteiro da Linha 1 simetricamente sob o nó raiz (CEOs)
+    let minXL1 = Infinity;
+    let maxXL1 = -Infinity;
+    linha1Nodes.forEach((node) => {
+      const b = getSubtreeBounds(node);
+      if (b.minX < minXL1) minXL1 = b.minX;
+      if (b.maxX > maxXL1) maxXL1 = b.maxX;
+    });
+
+    const centerL1 = (minXL1 + maxXL1) / 2;
+    const deltaXCenterL1 = isFinite(centerL1) ? (rootNode.x - centerL1) : 0;
+    linha1Nodes.forEach((node) => {
+      node.descendants().forEach((desc) => {
+        desc.x += deltaXCenterL1;
+      });
     });
   }
 
   // 2. Andar Inferior (Linha 2): Diretorias Executivas e toda a cascata subordinada
+  linha2Nodes.sort((a, b) => a.x - b.x);
+  let currentRightLimitL2 = -Infinity;
+  linha2Nodes.forEach((dirNode, idx) => {
+    const bounds = getSubtreeBounds(dirNode);
+    if (idx > 0 && bounds.minX < currentRightLimitL2 + HORIZONTAL_GAP) {
+      const shiftX = (currentRightLimitL2 + HORIZONTAL_GAP) - bounds.minX;
+      dirNode.descendants().forEach((desc) => {
+        desc.x += shiftX;
+      });
+    }
+    const updatedBounds = getSubtreeBounds(dirNode);
+    currentRightLimitL2 = updatedBounds.maxX;
+  });
+
   let minXLinha2 = Infinity;
   let maxXLinha2 = -Infinity;
-
   linha2Nodes.forEach((dirNode) => {
-    dirNode.descendants().forEach((desc) => {
-      const w = desc.width || CARD_WIDTH;
-      const left = desc.x - w / 2;
-      const right = desc.x + w / 2;
-      if (left < minXLinha2) minXLinha2 = left;
-      if (right > maxXLinha2) maxXLinha2 = right;
-    });
+    const b = getSubtreeBounds(dirNode);
+    if (b.minX < minXLinha2) minXLinha2 = b.minX;
+    if (b.maxX > maxXLinha2) maxXLinha2 = b.maxX;
   });
 
   const centerLinha2 = (minXLinha2 + maxXLinha2) / 2;
@@ -597,13 +645,14 @@ const OrganogramaView = forwardRef(function OrganogramaView(
         .compact(false)
         .nodeId((d) => d.id)
         .parentNodeId((d) => d.parentId)
-        .nodeWidth((d) => 260)
-        .nodeHeight((d) => (d.depth === 0 ? 140 : 135))
-        // Distanciamento vertical entre pais e filhos aumentado (linhas conectoras respiram)
-        .childrenMargin(() => 70)
-        // Respiros horizontais entre nós irmãos e blocos vizinhos
-        .neighbourMargin(() => 45)
-        .siblingsMargin(() => 35)
+        .nodeWidth((d) => CARD_WIDTH)
+        .nodeHeight((d) => CARD_HEIGHT)
+        // Espaçamento vertical entre a base do nó pai e o topo do nó filho (mínimo 80px a 100px)
+        .childrenMargin(() => VERTICAL_GAP)
+        // Espaçamento horizontal entre subárvores e blocos vizinhos
+        .neighbourMargin(() => NEIGHBOUR_GAP)
+        // Distância mínima entre nós irmãos contíguos (mínimo 40px)
+        .siblingsMargin(() => HORIZONTAL_GAP)
         // Intercepta e reorganiza a profundidade vertical e eixos em dois andares horizontais
         .layoutBindings({
           ...defaultLayoutBindings,
@@ -618,27 +667,52 @@ const OrganogramaView = forwardRef(function OrganogramaView(
             nodeLeftX: (node) => -node.width / 2,
             nodeRightX: (node) => node.width / 2,
             nodeTopY: (node) => 0,
-            nodeBottomY: (node) => node.height
+            nodeBottomY: (node) => node.height,
+            linkX: (node) => node.x,
+            linkY: (node) => node.y,
+            linkParentX: (node) => node.parent.x,
+            linkParentY: (node) => node.parent.y + node.parent.height
           }
         })
-        // Sobrescreve o gerador de links com traçado ortogonal clássico e limpo (ângulo reto)
-        .diagonal(function (s, t) {
-          const sx = s.x;
-          const sy = s.y;
-          const tx = t.x;
-          const ty = t.y;
+        // Sobrescreve o gerador de links com traçado ortogonal em "T" invertido estrito e limpo
+        .diagonal(function (n, p) {
+          // n: nó filho / destino (target)
+          // p: nó pai / origem (source)
+          if (!n || !p) return '';
 
-          // Se for o link conectando Co-CEOs à Linha 2 de Diretorias (distância vertical > 200px)
-          // posiciona o barramento horizontal no vão respiratório logo acima da Linha 2 (sy - 35)
-          // evitando sobreposição visual com os cards da Linha 1 e seus eventuais filhos abertos
-          const isLinha2Link = Math.abs(sy - ty) > 200;
-          const midY = isLinha2Link ? (sy - 35) : ((sy + ty) / 2);
+          // 1. Ponto de partida da linha de conexão inferior (sourceAnchor):
+          // Calculado estritamente na base do cartão, imediatamente abaixo do botão de expansão inferior ▾ (base + 14px)
+          const sourceX = p.x;
+          const sourceY = p.y + 14;
+
+          // 2. Ponto de chegada no nó filho (targetAnchor):
+          // Fixado exatamente no topo superior central do cartão filho (y: node.y, x: node.x)
+          const targetX = n.x;
+          const targetY = n.y;
+
+          // Se estiver na mesma vertical exata (diferença < 1px), desce em linha reta
+          if (Math.abs(sourceX - targetX) < 1) {
+            return `M ${sourceX} ${sourceY} L ${targetX} ${targetY}`;
+          }
+
+          // 3. Traçado Ortogonal Limpo em "T" Invertido / Árvore:
+          // Desce verticalmente pelo menos 25px antes de dobrar horizontalmente para distribuir os filhos
+          const deltaY = targetY - sourceY;
+          let midY;
+          if (deltaY > 180) {
+            // Conexão entre Co-CEOs e o andar inferior de Diretorias Executivas:
+            // posiciona a barra horizontal no vão respiratório logo acima do topo das Diretorias
+            midY = targetY - 35;
+          } else {
+            // Conexão normal entre níveis: desce no mínimo 25px a 30px da base do pai antes da dobra horizontal
+            midY = sourceY + Math.max(25, Math.min(deltaY - 20, deltaY * 0.45));
+          }
 
           return `
-            M ${sx} ${sy}
-            L ${sx} ${midY}
-            L ${tx} ${midY}
-            L ${tx} ${ty}
+            M ${sourceX} ${sourceY}
+            L ${sourceX} ${midY}
+            L ${targetX} ${midY}
+            L ${targetX} ${targetY}
           `;
         })
         // Clicar em um Card: centraliza, destaca automaticamente e abre detalhes
@@ -837,7 +911,7 @@ const OrganogramaView = forwardRef(function OrganogramaView(
           const temScroll = membrosParaExibir.length >= 5;
 
           return `
-            <div class="org-card jhe-org-card jhe-custom-node-container rounded-2xl transition-all duration-200 overflow-visible ${item.classe_css || 'jhe-level-diretoria'} ${
+            <div class="org-card jhe-org-card jhe-custom-node-container rounded-2xl transition-all duration-200 overflow-visible relative z-10 ${item.classe_css || 'jhe-level-diretoria'} ${
               isHighlighted ? 'is-highlighted' : ''
             }" 
                  style="
@@ -984,6 +1058,18 @@ const OrganogramaView = forwardRef(function OrganogramaView(
           `;
         })
         .render();
+
+      // Aplica classes de isolamento de camadas estritas (z-index)
+      if (d3ContainerRef.current) {
+        d3.select(d3ContainerRef.current)
+          .selectAll('.links-wrapper, .connections-wrapper')
+          .classed('pointer-events-none z-0', true)
+          .style('pointer-events', 'none');
+
+        d3.select(d3ContainerRef.current)
+          .selectAll('.nodes-wrapper')
+          .classed('relative z-10', true);
+      }
 
       // Estado Inicial Padrão: Árvore totalmente colapsada no nó raiz (CEOs) e perfeitamente centralizada
       if (!hasInitializedTreeRef.current) {

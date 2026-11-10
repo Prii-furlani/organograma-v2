@@ -81,9 +81,35 @@ body {
 }
 
 /* =============================================================================
+   HIERARQUIA DE CAMADAS E ISOLAMENTO DOS CONECTORES SVG
+   ============================================================================= */
+.links-wrapper,
+.connections-wrapper,
+svg .links-wrapper,
+svg .connections-wrapper {
+  pointer-events: none !important;
+  z-index: 0 !important;
+}
+
+.nodes-wrapper,
+svg .nodes-wrapper {
+  position: relative !important;
+  z-index: 10 !important;
+}
+
+.node-foreign-object {
+  overflow: visible !important;
+  position: relative !important;
+  z-index: 10 !important;
+}
+
+/* =============================================================================
    CLASSES SEMÂNTICAS DE CARDS DO ORGANOGRAMA (.jhe-level-*) — Estética Clean
    ============================================================================= */
 .jhe-org-card {
+  position: relative !important;
+  z-index: 10 !important;
+  isolation: isolate;
   background-color: var(--jhe-surface-card);
   color: var(--jhe-text-main);
   border: 1px solid var(--jhe-border-subtle);
