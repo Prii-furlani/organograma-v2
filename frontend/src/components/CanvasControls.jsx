@@ -165,8 +165,8 @@ export default function CanvasControls({
           {exportMenuOpen && (
             <div className="absolute bottom-full left-0 mb-2 w-56 p-1.5 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200/90 dark:border-slate-700 z-50 animate-in fade-in zoom-in-95 duration-150">
               <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center justify-between">
-                <span>Exportar Imagem</span>
-                <span className="text-[9px] font-mono text-sky-600 dark:text-sky-400">d3-org-chart</span>
+                <span>Exportar Organograma</span>
+                <span className="text-[9px] font-mono text-sky-600 dark:text-sky-400">Escala 1:1</span>
               </div>
 
               <div className="p-1 space-y-0.5">
@@ -183,7 +183,7 @@ export default function CanvasControls({
                   </div>
                   <div>
                     <div className="font-semibold text-slate-800 dark:text-slate-100 leading-tight">Imagem PNG (2x)</div>
-                    <div className="text-[10px] text-slate-400">Alta resolução nítida</div>
+                    <div className="text-[10px] text-slate-400">Alta resolução 1:1 nítida</div>
                   </div>
                 </button>
 
@@ -199,8 +199,8 @@ export default function CanvasControls({
                     <FileText size={15} strokeWidth={2.2} />
                   </div>
                   <div>
-                    <div className="font-semibold text-slate-800 dark:text-slate-100 leading-tight">Documento PDF (A4)</div>
-                    <div className="text-[10px] text-slate-400">Pronto para impressão</div>
+                    <div className="font-semibold text-slate-800 dark:text-slate-100 leading-tight">Documento PDF (Alta Resolução)</div>
+                    <div className="text-[10px] text-slate-400">Prancha proporcional sob medida</div>
                   </div>
                 </button>
 
@@ -217,7 +217,7 @@ export default function CanvasControls({
                   </div>
                   <div>
                     <div className="font-semibold text-slate-800 dark:text-slate-100 leading-tight">Vetor SVG</div>
-                    <div className="text-[10px] text-slate-400">Escalável sem perda</div>
+                    <div className="text-[10px] text-slate-400">Estilos e fontes incorporados</div>
                   </div>
                 </button>
               </div>

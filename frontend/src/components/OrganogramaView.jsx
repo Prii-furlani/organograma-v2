@@ -2,8 +2,8 @@ import React, { useEffect, useRef, useState, useMemo, forwardRef, useImperativeH
 import { OrgChart } from 'd3-org-chart';
 import * as d3 from 'd3';
 import Swal from 'sweetalert2';
-import { toPng } from 'html-to-image';
-import jsPDF from 'jspdf';
+import { toPng, toSvg } from 'html-to-image';
+import { jsPDF } from 'jspdf';
 import { useTheme } from '../context/ThemeContext';
 import { buildAndSortOrgTree } from '../utils/treeBuilder';
 import CanvasControls from './CanvasControls';
@@ -495,55 +495,27 @@ const OrganogramaView = forwardRef(function OrganogramaView(
         const totalTreeWidth = Math.ceil((maxX - minX) + MARGIN * 2);
         const totalTreeHeight = Math.ceil((maxY - minY) + MARGIN * 2);
 
-        // 2. Exportação Vetorial SVG em Escala 1:1 (Zoom infinito sem perda de qualidade)
-        if (format === 'svg') {
-          const svgEl = container.querySelector('svg.svg-chart-container') || container.querySelector('svg');
-          const chartEl = svgEl?.querySelector('g.chart');
-          origChartTransform = chartEl?.getAttribute('transform');
-          origSvgWidth = svgEl?.getAttribute('width');
-          origSvgHeight = svgEl?.getAttribute('height');
+        // 2. Feedback Visual de Processamento
+        const formatTitle =
+          format === 'pdf'
+            ? 'Gerando prancha PDF sob medida...'
+            : format === 'svg'
+            ? 'Gerando vetor SVG com estilos...'
+            : 'Gerando imagem em alta resolução...';
 
-          try {
-            if (chartEl) {
-              chartEl.setAttribute('transform', `translate(${-minX + MARGIN}, ${-minY + MARGIN}) scale(1)`);
-            }
-            if (svgEl) {
-              svgEl.setAttribute('width', `${totalTreeWidth}`);
-              svgEl.setAttribute('height', `${totalTreeHeight}`);
-            }
-            chartRef.current.exportSvg();
-          } finally {
-            if (chartEl && origChartTransform) chartEl.setAttribute('transform', origChartTransform);
-            if (svgEl && origSvgWidth) svgEl.setAttribute('width', origSvgWidth);
-            if (svgEl && origSvgHeight) svgEl.setAttribute('height', origSvgHeight);
-          }
-
-          Swal.fire({
-            toast: true,
-            position: 'top-end',
-            icon: 'success',
-            title: 'Vetor SVG Exportado',
-            text: 'Arquivo vetorial baixado em escala real 1:1 (zoom infinito sem perda).',
-            showConfirmButton: false,
-            timer: 3000
-          });
-          return;
-        }
-
-        // 3. Feedback Visual de Processamento
         Swal.fire({
-          title: 'Gerando imagem em alta resolução...',
-          text: 'Renderizando árvore completa em escala 1:1 com nitidez máxima (HD 2x).',
+          title: formatTitle,
+          text: 'Renderizando árvore completa em escala 1:1 com nitidez máxima.',
           allowOutsideClick: false,
           didOpen: () => {
             Swal.showLoading();
           }
         });
 
-        // 4. Aplica classe de isolamento para omitir popovers suspensos e controles
+        // 3. Aplica classe de isolamento para omitir popovers suspensos e controles
         container.classList.add('is-exporting');
 
-        // 5. Salva o estado atual e aplica o enquadramento em escala 1:1 no DOM
+        // 4. Salva o estado atual e aplica o enquadramento em escala 1:1 no DOM
         const svgEl = container.querySelector('svg.svg-chart-container') || container.querySelector('svg');
         const chartEl = svgEl?.querySelector('g.chart');
         origChartTransform = chartEl?.getAttribute('transform');
@@ -559,14 +531,13 @@ const OrganogramaView = forwardRef(function OrganogramaView(
         }
 
         // Aguarda estabilização do repaint do navegador
-        await new Promise((resolve) => setTimeout(resolve, 80));
+        await new Promise((resolve) => setTimeout(resolve, 100));
 
-        // 6. Captura com html-to-image em escala real 1:1 com alta densidade de pixels (pixelRatio: 2)
+        const treeElement = document.getElementById('organograma-tree-content') || container;
+
         const options = {
           width: totalTreeWidth,
           height: totalTreeHeight,
-          pixelRatio: 2, // Garante nitidez máxima e alta densidade de pixels
-          quality: 0.98,
           backgroundColor: bg,
           filter: (node) => {
             if (!node || !node.classList) return true;
@@ -583,30 +554,50 @@ const OrganogramaView = forwardRef(function OrganogramaView(
           }
         };
 
-        const treeElement = document.getElementById('organograma-tree-content') || container;
-        const dataUrl = await toPng(treeElement, options);
+        if (format === 'svg') {
+          // Geração de SVG via html-to-image para incorporar todos os estilos CSS/Tailwind e fontes
+          const svgDataUrl = await toSvg(treeElement, options);
+          const link = document.createElement('a');
+          link.download = `${nomeArquivo}.svg`;
+          link.href = svgDataUrl;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+
+          Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: 'Vetor SVG Exportado',
+            text: 'Arquivo vetorial com estilos e fontes incorporados em escala 1:1.',
+            showConfirmButton: false,
+            timer: 3000
+          });
+          return;
+        }
+
+        // Para PNG e PDF: capturar bitmap em alta densidade (pixelRatio: 2)
+        const pngOptions = {
+          ...options,
+          pixelRatio: 2,
+          quality: 0.98
+        };
+        const dataUrl = await toPng(treeElement, pngOptions);
 
         if (format === 'pdf') {
-          const isLandscape = totalTreeWidth >= totalTreeHeight;
-          const pdf = new jsPDF(isLandscape ? 'landscape' : 'portrait', 'pt', 'a4');
-          const pdfWidth = pdf.internal.pageSize.getWidth();
-          const pdfHeight = pdf.internal.pageSize.getHeight();
+          // Criação da prancha PDF proporcional sob medida (sem deformação ou esmagamento em folha fixa A4)
+          const orientation = totalTreeWidth >= totalTreeHeight ? 'landscape' : 'portrait';
+          const pdf = new jsPDF({
+            orientation,
+            unit: 'px',
+            format: [totalTreeWidth, totalTreeHeight]
+          });
 
-          const margin = 20;
-          const maxWidth = pdfWidth - margin * 2;
-          const maxHeight = pdfHeight - margin * 2;
-
-          const ratio = Math.min(maxWidth / totalTreeWidth, maxHeight / totalTreeHeight);
-          const finalWidth = totalTreeWidth * ratio;
-          const finalHeight = totalTreeHeight * ratio;
-          const posX = (pdfWidth - finalWidth) / 2;
-          const posY = (pdfHeight - finalHeight) / 2;
-
-          // Preenchimento de fundo consistente (#0B132B em dark mode)
+          // Preenchimento de fundo corporativo consistente (#0B132B em dark mode)
           pdf.setFillColor(isDark ? 11 : 255, isDark ? 19 : 255, isDark ? 43 : 255);
-          pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
+          pdf.rect(0, 0, totalTreeWidth, totalTreeHeight, 'F');
 
-          pdf.addImage(dataUrl, 'PNG', posX, posY, finalWidth, finalHeight);
+          pdf.addImage(dataUrl, 'PNG', 0, 0, totalTreeWidth, totalTreeHeight);
           pdf.save(`${nomeArquivo}.pdf`);
 
           Swal.fire({
@@ -614,7 +605,7 @@ const OrganogramaView = forwardRef(function OrganogramaView(
             position: 'top-end',
             icon: 'success',
             title: 'Documento PDF Exportado',
-            text: 'PDF gerado com enquadramento proporcional e alta definição.',
+            text: 'Prancha proporcional sob medida em alta definição (escala 1:1 perfeita).',
             showConfirmButton: false,
             timer: 2500
           });
@@ -1020,10 +1011,10 @@ const OrganogramaView = forwardRef(function OrganogramaView(
                    height: 100%;
                    box-sizing: border-box;
                  ">
-              <div class="p-3.5 flex flex-col justify-between h-full" style="box-sizing: border-box; height: 100%;">
+              <div class="p-3.5 flex flex-col justify-between h-full" style="box-sizing: border-box; height: 100%; overflow: hidden; max-height: 140px;">
                 
                 <!-- Topo: Ponto Colorido do Nível + Sigla + Nome do Nível -->
-                <div>
+                <div style="overflow: hidden;">
                   <div class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider mb-1.5">
                     <span 
                       style="background-color: ${corAcento}; box-shadow: 0 0 8px ${corAcento}90;" 
@@ -1037,7 +1028,8 @@ const OrganogramaView = forwardRef(function OrganogramaView(
                   </div>
                   
                   <!-- Título do Setor -->
-                  <h4 class="${isDark ? 'text-white' : 'text-slate-900'} font-bold text-xs leading-snug line-clamp-2">
+                  <h4 class="${isDark ? 'text-white' : 'text-slate-900'} font-bold text-xs leading-snug line-clamp-2"
+                      style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; max-height: 34px; line-height: 17px; word-break: break-word;">
                     ${item.titulo}
                   </h4>
                 </div>
