@@ -440,11 +440,15 @@ const OrganogramaView = forwardRef(function OrganogramaView(
     }
   }, [modoVisao, isCanvasLocked]);
 
-  // Exportação Direta e Resiliente do Canvas em Imagem (PNG 2x / PDF / SVG)
+  // Exportação em Alta Resolução (Full Content Bounding Box sem Escala Reduzida - 1:1)
   const handleExportCanvas = useCallback(
     async (format = 'png') => {
       if (!chartRef.current || !d3ContainerRef.current) return;
       const container = d3ContainerRef.current;
+
+      let origChartTransform = null;
+      let origSvgWidth = null;
+      let origSvgHeight = null;
 
       try {
         const isDark = theme === 'dark';
@@ -455,44 +459,115 @@ const OrganogramaView = forwardRef(function OrganogramaView(
 
         chartRef.current.imageName(nomeArquivo);
 
+        // 1. Cálculo da Caixa Delimitadora Real (Full Content Bounding Box)
+        const chartState = chartRef.current.getChartState?.() || {};
+        const root = chartState.root;
+        const visibleNodes = root ? root.descendants() : [];
+
+        let minX = Infinity;
+        let maxX = -Infinity;
+        let minY = Infinity;
+        let maxY = -Infinity;
+
+        visibleNodes.forEach((d) => {
+          const w = d.width || CARD_WIDTH;
+          const h = d.height || CARD_HEIGHT;
+          const left = d.x - w / 2;
+          const right = d.x + w / 2;
+          const top = d.y;
+          const bottom = d.y + h;
+
+          if (left < minX) minX = left;
+          if (right > maxX) maxX = right;
+          if (top < minY) minY = top;
+          if (bottom > maxY) maxY = bottom;
+        });
+
+        if (!isFinite(minX) || !isFinite(maxX) || !isFinite(minY) || !isFinite(maxY)) {
+          minX = -CARD_WIDTH / 2;
+          maxX = CARD_WIDTH / 2;
+          minY = 0;
+          maxY = CARD_HEIGHT;
+        }
+
+        // Margem de segurança de 80px em cada lado (160px de respiro total)
+        const MARGIN = 80;
+        const totalTreeWidth = Math.ceil((maxX - minX) + MARGIN * 2);
+        const totalTreeHeight = Math.ceil((maxY - minY) + MARGIN * 2);
+
+        // 2. Exportação Vetorial SVG em Escala 1:1 (Zoom infinito sem perda de qualidade)
         if (format === 'svg') {
-          chartRef.current.exportSvg();
+          const svgEl = container.querySelector('svg.svg-chart-container') || container.querySelector('svg');
+          const chartEl = svgEl?.querySelector('g.chart');
+          origChartTransform = chartEl?.getAttribute('transform');
+          origSvgWidth = svgEl?.getAttribute('width');
+          origSvgHeight = svgEl?.getAttribute('height');
+
+          try {
+            if (chartEl) {
+              chartEl.setAttribute('transform', `translate(${-minX + MARGIN}, ${-minY + MARGIN}) scale(1)`);
+            }
+            if (svgEl) {
+              svgEl.setAttribute('width', `${totalTreeWidth}`);
+              svgEl.setAttribute('height', `${totalTreeHeight}`);
+            }
+            chartRef.current.exportSvg();
+          } finally {
+            if (chartEl && origChartTransform) chartEl.setAttribute('transform', origChartTransform);
+            if (svgEl && origSvgWidth) svgEl.setAttribute('width', origSvgWidth);
+            if (svgEl && origSvgHeight) svgEl.setAttribute('height', origSvgHeight);
+          }
+
           Swal.fire({
             toast: true,
             position: 'top-end',
             icon: 'success',
             title: 'Vetor SVG Exportado',
-            text: 'Arquivo baixado com sucesso em alta definição.',
+            text: 'Arquivo vetorial baixado em escala real 1:1 (zoom infinito sem perda).',
             showConfirmButton: false,
-            timer: 2500
+            timer: 3000
           });
           return;
         }
 
+        // 3. Feedback Visual de Processamento
         Swal.fire({
-          title: 'Gerando exportação do organograma...',
-          text: 'Normalizando escala da árvore e renderizando alta definição (HD 2x).',
+          title: 'Gerando imagem em alta resolução...',
+          text: 'Renderizando árvore completa em escala 1:1 com nitidez máxima (HD 2x).',
           allowOutsideClick: false,
           didOpen: () => {
             Swal.showLoading();
           }
         });
 
-        // 1. Aplica classe de isolamento para omitir popovers suspensos e controles
+        // 4. Aplica classe de isolamento para omitir popovers suspensos e controles
         container.classList.add('is-exporting');
 
-        // 2. Normaliza a escala da visualização executando fitView
-        chartRef.current.clearHighlighting();
-        chartRef.current.fit();
+        // 5. Salva o estado atual e aplica o enquadramento em escala 1:1 no DOM
+        const svgEl = container.querySelector('svg.svg-chart-container') || container.querySelector('svg');
+        const chartEl = svgEl?.querySelector('g.chart');
+        origChartTransform = chartEl?.getAttribute('transform');
+        origSvgWidth = svgEl?.getAttribute('width');
+        origSvgHeight = svgEl?.getAttribute('height');
 
-        // Aguarda estabilização da animação do D3 (350ms)
-        await new Promise((resolve) => setTimeout(resolve, 350));
+        if (chartEl) {
+          chartEl.setAttribute('transform', `translate(${-minX + MARGIN}, ${-minY + MARGIN}) scale(1)`);
+        }
+        if (svgEl) {
+          svgEl.setAttribute('width', `${totalTreeWidth}`);
+          svgEl.setAttribute('height', `${totalTreeHeight}`);
+        }
 
-        // 3. Opções estritas de captura com html-to-image
+        // Aguarda estabilização do repaint do navegador
+        await new Promise((resolve) => setTimeout(resolve, 80));
+
+        // 6. Captura com html-to-image em escala real 1:1 com alta densidade de pixels (pixelRatio: 2)
         const options = {
-          backgroundColor: bg,
-          pixelRatio: 2,
+          width: totalTreeWidth,
+          height: totalTreeHeight,
+          pixelRatio: 2, // Garante nitidez máxima e alta densidade de pixels
           quality: 0.98,
+          backgroundColor: bg,
           filter: (node) => {
             if (!node || !node.classList) return true;
             if (node.classList.contains('no-export')) return false;
@@ -502,25 +577,28 @@ const OrganogramaView = forwardRef(function OrganogramaView(
           },
           style: {
             transform: 'none',
-            transformOrigin: 'top left'
+            transformOrigin: 'top left',
+            width: `${totalTreeWidth}px`,
+            height: `${totalTreeHeight}px`
           }
         };
 
-        const dataUrl = await toPng(container, options);
+        const treeElement = document.getElementById('organograma-tree-content') || container;
+        const dataUrl = await toPng(treeElement, options);
 
         if (format === 'pdf') {
-          const pdf = new jsPDF('landscape', 'pt', 'a4');
+          const isLandscape = totalTreeWidth >= totalTreeHeight;
+          const pdf = new jsPDF(isLandscape ? 'landscape' : 'portrait', 'pt', 'a4');
           const pdfWidth = pdf.internal.pageSize.getWidth();
           const pdfHeight = pdf.internal.pageSize.getHeight();
 
-          const imgProps = pdf.getImageProperties(dataUrl);
           const margin = 20;
           const maxWidth = pdfWidth - margin * 2;
           const maxHeight = pdfHeight - margin * 2;
 
-          const ratio = Math.min(maxWidth / imgProps.width, maxHeight / imgProps.height);
-          const finalWidth = imgProps.width * ratio;
-          const finalHeight = imgProps.height * ratio;
+          const ratio = Math.min(maxWidth / totalTreeWidth, maxHeight / totalTreeHeight);
+          const finalWidth = totalTreeWidth * ratio;
+          const finalHeight = totalTreeHeight * ratio;
           const posX = (pdfWidth - finalWidth) / 2;
           const posY = (pdfHeight - finalHeight) / 2;
 
@@ -536,12 +614,12 @@ const OrganogramaView = forwardRef(function OrganogramaView(
             position: 'top-end',
             icon: 'success',
             title: 'Documento PDF Exportado',
-            text: 'PDF gerado com sucesso em alta definição.',
+            text: 'PDF gerado com enquadramento proporcional e alta definição.',
             showConfirmButton: false,
             timer: 2500
           });
         } else {
-          // Download da imagem PNG
+          // Download da imagem PNG em alta resolução
           const link = document.createElement('a');
           link.download = `${nomeArquivo}.png`;
           link.href = dataUrl;
@@ -554,9 +632,9 @@ const OrganogramaView = forwardRef(function OrganogramaView(
             position: 'top-end',
             icon: 'success',
             title: 'Imagem PNG Exportada',
-            text: 'Arquivo baixado em alta resolução nítida (2x).',
+            text: 'Árvore completa capturada em escala 1:1 com alta resolução nítida (2x).',
             showConfirmButton: false,
-            timer: 2500
+            timer: 3000
           });
         }
       } catch (err) {
@@ -568,6 +646,21 @@ const OrganogramaView = forwardRef(function OrganogramaView(
           confirmButtonColor: '#0E284E'
         });
       } finally {
+        // Restaura imediatamente a visualização do usuário ao zoom/pan exato prévio
+        try {
+          const svgEl = container.querySelector('svg.svg-chart-container') || container.querySelector('svg');
+          const chartEl = svgEl?.querySelector('g.chart');
+          const chartState = chartRef.current?.getChartState?.();
+          const { zoomBehavior, lastTransform } = chartState || {};
+
+          if (chartEl && origChartTransform) chartEl.setAttribute('transform', origChartTransform);
+          if (svgEl && origSvgWidth) svgEl.setAttribute('width', origSvgWidth);
+          if (svgEl && origSvgHeight) svgEl.setAttribute('height', origSvgHeight);
+
+          if (svgEl && zoomBehavior && lastTransform) {
+            d3.select(svgEl).call(zoomBehavior.transform, lastTransform);
+          }
+        } catch (_) {}
         container.classList.remove('is-exporting');
       }
     },
@@ -1140,6 +1233,7 @@ const OrganogramaView = forwardRef(function OrganogramaView(
         </div>
       ) : (
         <div
+          id="organograma-tree-content"
           ref={d3ContainerRef}
           className={`w-full h-full ${
             isCanvasLocked ? 'cursor-default' : 'cursor-grab active:cursor-grabbing'
