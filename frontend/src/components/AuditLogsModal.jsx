@@ -503,72 +503,84 @@ export default function AuditLogsModal({ isOpen, onClose }) {
 
           {/* Table */}
           {!carregando && !erro && logs.length > 0 && (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs sm:text-sm border-collapse">
-                <thead className="bg-slate-50/70 dark:bg-slate-800/40 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 dark:border-slate-800 sticky top-0">
-                  <tr>
-                    <th className="py-3 px-6 sm:px-8 whitespace-nowrap">Data e Hora</th>
-                    <th className="py-3 px-4 whitespace-nowrap">Usuário</th>
-                    <th className="py-3 px-4 whitespace-nowrap">Ação / Módulo</th>
-                    <th className="py-3 px-4 whitespace-nowrap">Entidade Afetada</th>
-                    <th className="py-3 px-6 sm:px-8">Detalhamento</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100/70 dark:divide-slate-800/60">
-                  {logs.map((log, idx) => (
-                    <tr
-                      key={log.id ?? idx}
-                      className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors"
-                    >
-                      {/* Data e Hora */}
-                      <td className="py-3.5 px-6 sm:px-8 whitespace-nowrap text-xs text-slate-500 dark:text-slate-400 font-mono">
-                        {(log.data_hora || log.created_at)
-                          ? new Date(log.data_hora || log.created_at).toLocaleString('pt-BR')
-                          : '—'}
-                      </td>
-
-                      {/* Usuário */}
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        <div className="font-semibold text-slate-800 dark:text-slate-200">
-                          {log.usuario_nome ?? '—'}
-                        </div>
-                        {log.usuario_email && (
-                          <div className="text-[11px] text-slate-400 dark:text-slate-500 font-mono">
-                            {log.usuario_email}
-                          </div>
-                        )}
-                      </td>
-
-                      {/* Ação / Local */}
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
-                            BADGE_CLASSES[log.acao] ?? 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
-                          }`}
-                        >
-                          {ACAO_ROTULO[log.acao] ?? log.acao}
-                        </span>
-                        {log.modulo && (
-                          <div className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
-                            {log.modulo}
-                          </div>
-                        )}
-                      </td>
-
-                      {/* Entidade Afetada */}
-                      <td
-                        className="py-3.5 px-4 text-slate-700 dark:text-slate-300 max-w-[200px] font-medium truncate"
-                        title={log.entidade_afetada || log.entidade_titulo || ''}
-                      >
-                        {log.entidade_afetada ?? log.entidade_titulo ?? log.entidade_tipo ?? (log.no_id ? `Nó #${log.no_id}` : '—')}
-                      </td>
-
-                      {/* Detalhamento */}
-                      <td className="py-3.5 px-6 sm:px-8 max-w-[320px]">{renderDetalhes(log)}</td>
+            <div className="p-4 sm:p-6">
+              <div className="relative overflow-x-auto overflow-y-auto max-h-[60vh] border border-slate-200 dark:border-slate-800 rounded-xl custom-scrollbar">
+                <table className="w-full text-left text-xs sm:text-sm border-collapse">
+                  <thead className="sticky top-0 z-20 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    <tr>
+                      <th className="px-4 sm:px-6 py-3 whitespace-nowrap text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900">
+                        Data e Hora
+                      </th>
+                      <th className="px-4 py-3 whitespace-nowrap text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900">
+                        Usuário
+                      </th>
+                      <th className="px-4 py-3 whitespace-nowrap text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900">
+                        Ação / Módulo
+                      </th>
+                      <th className="px-4 py-3 whitespace-nowrap text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900">
+                        Entidade Afetada
+                      </th>
+                      <th className="px-4 sm:px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900">
+                        Detalhamento
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100/70 dark:divide-slate-800/60">
+                    {logs.map((log, idx) => (
+                      <tr
+                        key={log.id ?? idx}
+                        className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors"
+                      >
+                        {/* Data e Hora */}
+                        <td className="py-3.5 px-4 sm:px-6 whitespace-nowrap text-xs text-slate-500 dark:text-slate-400 font-mono">
+                          {(log.data_hora || log.created_at)
+                            ? new Date(log.data_hora || log.created_at).toLocaleString('pt-BR')
+                            : '—'}
+                        </td>
+
+                        {/* Usuário */}
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          <div className="font-semibold text-slate-800 dark:text-slate-200">
+                            {log.usuario_nome ?? '—'}
+                          </div>
+                          {log.usuario_email && (
+                            <div className="text-[11px] text-slate-400 dark:text-slate-500 font-mono">
+                              {log.usuario_email}
+                            </div>
+                          )}
+                        </td>
+
+                        {/* Ação / Local */}
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
+                              BADGE_CLASSES[log.acao] ?? 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
+                            }`}
+                          >
+                            {ACAO_ROTULO[log.acao] ?? log.acao}
+                          </span>
+                          {log.modulo && (
+                            <div className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
+                              {log.modulo}
+                            </div>
+                          )}
+                        </td>
+
+                        {/* Entidade Afetada */}
+                        <td
+                          className="py-3.5 px-4 text-slate-700 dark:text-slate-300 max-w-[200px] font-medium truncate"
+                          title={log.entidade_afetada || log.entidade_titulo || ''}
+                        >
+                          {log.entidade_afetada ?? log.entidade_titulo ?? log.entidade_tipo ?? (log.no_id ? `Nó #${log.no_id}` : '—')}
+                        </td>
+
+                        {/* Detalhamento */}
+                        <td className="py-3.5 px-4 sm:px-6 max-w-[320px]">{renderDetalhes(log)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>

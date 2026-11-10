@@ -479,13 +479,13 @@ export default function UserManagementModal({ isOpen, onClose, allNodesFlat = []
 
   const handleAreaToggle = toggleVinculo;
 
-  const renderSortHeader = (campo, label, paddingClass = 'py-3 px-4') => {
+  const renderSortHeader = (campo, label, paddingClass = 'px-4 py-3') => {
     const isSelected = sortConfig.campo === campo;
     const isAsc = isSelected && sortConfig.direcao === 'asc';
 
     return (
       <th
-        className={`${paddingClass} select-none`}
+        className={`${paddingClass} text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900 select-none`}
         aria-sort={isSelected ? (isAsc ? 'ascending' : 'descending') : 'none'}
       >
         <button
@@ -494,7 +494,7 @@ export default function UserManagementModal({ isOpen, onClose, allNodesFlat = []
           className={`group inline-flex items-center gap-1.5 font-bold uppercase tracking-wider transition-colors cursor-pointer rounded-md -mx-1 px-1 py-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0E284E] dark:focus-visible:ring-[#61CBE8] ${
             isSelected
               ? 'text-[#0E284E] dark:text-[#61CBE8]'
-              : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+              : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
           }`}
           title={`Ordenar por ${label} (${isSelected ? (isAsc ? 'decrescente Z-A' : 'crescente A-Z') : 'crescente A-Z'})`}
           aria-label={`Ordenar por ${label}`}
@@ -510,7 +510,7 @@ export default function UserManagementModal({ isOpen, onClose, allNodesFlat = []
             ) : (
               <ArrowUpDown
                 size={12}
-                className="text-slate-300 dark:text-slate-600 opacity-60 group-hover:opacity-100 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-all"
+                className="text-slate-400 dark:text-slate-500 opacity-60 group-hover:opacity-100 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-all"
               />
             )}
           </span>
@@ -691,19 +691,20 @@ export default function UserManagementModal({ isOpen, onClose, allNodesFlat = []
               ) : (
                 <>
                   {/* Tabela Tradicional para Tablet e Desktop */}
-                  <div className="hidden sm:block overflow-x-auto">
-                    <table className="w-full text-left text-xs sm:text-sm border-collapse">
-                      <thead className="bg-slate-50/70 dark:bg-slate-800/40 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 dark:border-slate-800 sticky top-0 z-10">
-                        <tr>
-                          {renderSortHeader('colaborador', 'Colaborador', 'py-3 px-6 sm:px-8')}
-                          {renderSortHeader('perfil', 'Perfil', 'py-3 px-4')}
-                          {renderSortHeader('status', 'Status', 'py-3 px-4')}
-                          {renderSortHeader('areas', 'Áreas Vinculadas', 'py-3 px-4')}
-                          <th className="py-3 px-6 sm:px-8 text-right font-bold uppercase tracking-wider text-slate-400">
-                            Ações
-                          </th>
-                        </tr>
-                      </thead>
+                  <div className="hidden sm:block p-4 sm:p-6">
+                    <div className="relative overflow-x-auto overflow-y-auto max-h-[60vh] border border-slate-200 dark:border-slate-800 rounded-xl custom-scrollbar">
+                      <table className="w-full text-left text-xs sm:text-sm border-collapse">
+                        <thead className="sticky top-0 z-20 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                          <tr>
+                            {renderSortHeader('colaborador', 'Colaborador', 'px-4 sm:px-6 py-3')}
+                            {renderSortHeader('perfil', 'Perfil', 'px-4 py-3')}
+                            {renderSortHeader('status', 'Status', 'px-4 py-3')}
+                            {renderSortHeader('areas', 'Áreas Vinculadas', 'px-4 py-3')}
+                            <th className="px-4 sm:px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900">
+                              Ações
+                            </th>
+                          </tr>
+                        </thead>
                       <tbody className="divide-y divide-slate-100/70 dark:divide-slate-800/60">
                         {usuariosOrdenados.map((u) => {
                           const roleConfig = ROLES_INFO[u.role_global] || ROLES_INFO.colaborador;
@@ -827,6 +828,7 @@ export default function UserManagementModal({ isOpen, onClose, allNodesFlat = []
                       </tbody>
                     </table>
                   </div>
+                </div>
 
                   {/* Visualização em Cards Empilhados para Mobile (≤ 640px) */}
                   <div className="sm:hidden divide-y divide-slate-100 dark:divide-slate-800 p-3 space-y-3">
