@@ -120,7 +120,7 @@ svg .nodes-wrapper {
 }
 
 .jhe-custom-node-container {
-  padding-bottom: 22px !important;
+  padding-bottom: 0 !important;
 }
 
 .jhe-org-card:hover {

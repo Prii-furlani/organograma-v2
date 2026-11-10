@@ -22,7 +22,7 @@ function getLevelAccentColor(slug = '') {
 }
 
 const CARD_WIDTH = 260;
-const CARD_HEIGHT = 140;
+const CARD_HEIGHT = 148;
 const VERTICAL_GAP = 95; // Espaçamento vertical entre a base do pai e o topo do filho (80px - 100px)
 const HORIZONTAL_GAP = 45; // Espaçamento horizontal mínimo entre nós irmãos contíguos (>= 40px)
 const NEIGHBOUR_GAP = 60; // Espaçamento entre blocos de subárvores vizinhas
@@ -1122,7 +1122,7 @@ const OrganogramaView = forwardRef(function OrganogramaView(
                    position: relative !important;
                    width: 100% !important;
                    height: 100% !important;
-                   min-height: 140px !important;
+                   min-height: 148px !important;
                    box-sizing: border-box !important;
                    overflow: hidden !important;
                    border-radius: 16px !important;
@@ -1142,8 +1142,7 @@ const OrganogramaView = forwardRef(function OrganogramaView(
                      box-sizing: border-box !important;
                      width: 100% !important;
                      height: 100% !important;
-                     max-height: 140px !important;
-                     padding: 14px !important;
+                     padding: 12px 14px 10px 14px !important;
                      display: flex !important;
                      flex-direction: column !important;
                      justify-content: space-between !important;
@@ -1152,7 +1151,7 @@ const OrganogramaView = forwardRef(function OrganogramaView(
                 
                 <!-- Topo: Ponto Colorido do Nível + Sigla + Nome do Nível -->
                 <div style="overflow: hidden !important; width: 100% !important;">
-                  <div style="display: flex !important; align-items: center !important; gap: 6px !important; font-size: 10px !important; font-weight: 700 !important; text-transform: uppercase !important; letter-spacing: 0.05em !important; margin-bottom: 6px !important; width: 100% !important; overflow: hidden !important;">
+                  <div style="display: flex !important; align-items: center !important; gap: 6px !important; font-size: 10px !important; font-weight: 700 !important; text-transform: uppercase !important; letter-spacing: 0.05em !important; margin-bottom: 5px !important; width: 100% !important; overflow: hidden !important;">
                     <span 
                       style="width: 8px !important; height: 8px !important; min-width: 8px !important; min-height: 8px !important; max-width: 8px !important; max-height: 8px !important; border-radius: 9999px !important; background-color: ${corAcento} !important; box-shadow: 0 0 8px ${corAcento}90 !important; display: inline-block !important; flex-shrink: 0 !important;"
                     ></span>
@@ -1164,13 +1163,27 @@ const OrganogramaView = forwardRef(function OrganogramaView(
                   </div>
                   
                   <!-- Título do Setor -->
-                  <h4 style="color: ${isDark ? '#FFFFFF' : '#0F172A'} !important; font-weight: 700 !important; font-size: 12px !important; line-height: 17px !important; margin: 0 !important; padding: 0 !important; display: -webkit-box !important; -webkit-line-clamp: 2 !important; -webkit-box-orient: vertical !important; overflow: hidden !important; text-overflow: ellipsis !important; max-height: 34px !important; word-break: break-word !important;">
+                  <h4 style="
+                    color: ${isDark ? '#FFFFFF' : '#0F172A'} !important;
+                    font-weight: 700 !important;
+                    font-size: 12px !important;
+                    line-height: 1.35 !important;
+                    margin: 0 !important;
+                    padding: 0 0 2px 0 !important;
+                    display: -webkit-box !important;
+                    -webkit-line-clamp: 3 !important;
+                    -webkit-box-orient: vertical !important;
+                    overflow: hidden !important;
+                    text-overflow: ellipsis !important;
+                    max-height: 52px !important;
+                    word-break: break-word !important;
+                  " title="${item.titulo || ''}">
                     ${item.titulo}
                   </h4>
                 </div>
 
                 <!-- Rodapé: Gestor ou Equipe Direta e Contador de Equipe -->
-                <div style="display: flex !important; align-items: center !important; justify-content: space-between !important; min-height: 32px !important; padding-top: 10px !important; margin-top: 8px !important; border-top: 1px solid ${isDark ? 'rgba(51, 65, 85, 0.6)' : '#F1F5F9'} !important; width: 100% !important; box-sizing: border-box !important;">
+                <div style="display: flex !important; align-items: center !important; justify-content: space-between !important; min-height: 28px !important; padding-top: 6px !important; margin-top: 6px !important; border-top: 1px solid ${isDark ? 'rgba(51, 65, 85, 0.6)' : '#F1F5F9'} !important; width: 100% !important; box-sizing: border-box !important;">
                   ${
                     temGestorReal
                       ? `
