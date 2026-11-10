@@ -31,7 +31,7 @@ function resolveApiBaseUrl() {
 
 const api = axios.create({
   baseURL: resolveApiBaseUrl(),
-  timeout: 20000,
+  timeout: 60000, // 60s para suportar cold-start resiliente de instâncias Render
   headers: {
     'Content-Type': 'application/json'
   }
@@ -46,25 +46,71 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Interceptor de resposta: gerencia expiração de token (401) sem quebrar o acesso público
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      try {
+        localStorage.removeItem('jhe_org_token');
+        localStorage.removeItem('jhe_org_user');
+        sessionStorage.removeItem('jhe_org_token');
+        sessionStorage.removeItem('jhe_org_user');
+      } catch (_) {}
+    }
+    return Promise.reject(error);
+  }
+);
+
 /**
  * Busca a lista de nós do organograma (allNodesFlat) diretamente do banco MySQL
+ * com suporte resiliente a reconexão automática e cold-start da API no Render.
+ *
+ * @param {number} maxRetries Número máximo de tentativas (padrão: 3)
+ * @param {Function} onProgress Callback para atualizar status na interface (mensagem)
  */
-export async function fetchFlatNodesList() {
-  const { data } = await api.get('/organograma/arvore');
-  const nos = Array.isArray(data) ? data : data?.nos || [];
-  let niveis = data?.niveis || [];
-  if (!niveis.length) {
+export async function fetchFlatNodesList(maxRetries = 3, onProgress = null) {
+  let attempt = 0;
+  let lastError = null;
+
+  while (attempt <= maxRetries) {
     try {
-      const resNiveis = await api.get('/organograma/niveis');
-      niveis = Array.isArray(resNiveis.data) ? resNiveis.data : resNiveis.data?.niveis || [];
-    } catch {
-      // fallback
+      if (attempt > 0 && typeof onProgress === 'function') {
+        onProgress(`Conectando à API na nuvem... (Tentativa ${attempt + 1}/${maxRetries + 1})`);
+      }
+
+      const { data } = await api.get('/organograma/arvore');
+      const nos = Array.isArray(data) ? data : data?.nos || [];
+      let niveis = data?.niveis || [];
+
+      if (!niveis.length) {
+        try {
+          const resNiveis = await api.get('/organograma/niveis');
+          niveis = Array.isArray(resNiveis.data) ? resNiveis.data : resNiveis.data?.niveis || [];
+        } catch {
+          // Mantém níveis padrão se rota secundária falhar
+        }
+      }
+
+      return {
+        nos,
+        niveis
+      };
+    } catch (error) {
+      lastError = error;
+      attempt++;
+
+      if (attempt <= maxRetries) {
+        const delay = Math.min(attempt * 2500, 6000); // 2.5s, 5s, 6s
+        if (typeof onProgress === 'function') {
+          onProgress(`Aguardando inicialização do servidor Render (${attempt}/${maxRetries})...`);
+        }
+        await new Promise((res) => setTimeout(res, delay));
+      }
     }
   }
-  return {
-    nos,
-    niveis
-  };
+
+  throw lastError || new Error('Falha ao obter estrutura organizacional da API.');
 }
 
 /**

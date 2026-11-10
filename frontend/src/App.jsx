@@ -234,7 +234,13 @@ function OrganogramaContent() {
   } = useAuth();
   const [abaAtiva, setAbaAtiva] = useState('canvas');
   const [niveis, setNiveis] = useState(INITIAL_NIVEIS);
-  const [allNodesFlat, setAllNodesFlat] = useState(INITIAL_NOS);
+  // Em produção, NUNCA inicializa com dados mockados para evitar flash de dados antigos
+  const [allNodesFlat, setAllNodesFlat] = useState([]);
+  const [isLoadingNodes, setIsLoadingNodes] = useState(true);
+  const [loadingMessage, setLoadingMessage] = useState(
+    'Carregando estrutura corporativa JHE... (Conectando ao servidor)'
+  );
+  const [carregarError, setCarregarError] = useState(null);
   const [noSelecionado, setNoSelecionado] = useState(null);
   const [selectedPublicNode, setSelectedPublicNode] = useState(null);
   const [auditModalOpen, setAuditModalOpen] = useState(false);
@@ -242,6 +248,20 @@ function OrganogramaContent() {
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [quickGuideModalOpen, setQuickGuideModalOpen] = useState(false);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
+
+  // Limpeza de eventuais caches obsoletos em localStorage de sessões anteriores
+  useEffect(() => {
+    try {
+      const keysObsoletas = [
+        'jhe_organograma_nos',
+        'jhe_nos_cache',
+        'organograma_nodes_cache',
+        'organograma_nos_cache',
+        'allNodesFlatCache'
+      ];
+      keysObsoletas.forEach((key) => localStorage.removeItem(key));
+    } catch (_) {}
+  }, []);
 
   // Redefine a visualização para passiva se o usuário deslogar ou perder permissão
   useEffect(() => {
@@ -311,13 +331,31 @@ function OrganogramaContent() {
 
   const carregarDados = useCallback(async () => {
     try {
-      const { nos, niveis: niveisApi } = await fetchFlatNodesList();
+      setIsLoadingNodes(true);
+      setCarregarError(null);
+      setLoadingMessage('Carregando estrutura corporativa JHE... (Conectando ao servidor)');
+
+      const { nos, niveis: niveisApi } = await fetchFlatNodesList(4, (progMsg) => {
+        setLoadingMessage(progMsg);
+      });
+
       if (Array.isArray(nos) && nos.length > 0) {
         setNiveis(niveisApi?.length ? niveisApi : INITIAL_NIVEIS);
         setAllNodesFlat(nos);
+        setCarregarError(null);
+      } else {
+        setAllNodesFlat([]);
       }
     } catch (error) {
-      console.warn('Operando com estrutura local em memória:', error.message);
+      console.warn('Falha na comunicação com a API do organograma:', error.message);
+      setCarregarError(error.message || 'Erro ao sincronizar dados com o servidor.');
+      // Em modo de desenvolvimento local estrito, caso a API esteja offline, permite o mock
+      if (import.meta.env.DEV) {
+        console.info('[DEV ONLY] Carregando nós estáticos de desenvolvimento.');
+        setAllNodesFlat(INITIAL_NOS);
+      }
+    } finally {
+      setIsLoadingNodes(false);
     }
   }, []);
 
@@ -468,7 +506,45 @@ function OrganogramaContent() {
       />
 
       <main className="flex-1 relative">
-        {abaAtiva === 'canvas' || !canManage ? (
+        {isLoadingNodes && (!allNodesFlat || allNodesFlat.length === 0) ? (
+          <div className="flex flex-col items-center justify-center min-h-[70vh] px-4 text-center select-none bg-slate-50/50 dark:bg-slate-950/20">
+            <div className="relative mb-5">
+              <div className="w-16 h-16 border-4 border-[#0E284E]/15 dark:border-sky-400/20 border-t-[#0E284E] dark:border-t-sky-400 rounded-full animate-spin" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="w-3 h-3 rounded-full bg-[#0284C7] animate-ping" />
+              </div>
+            </div>
+            <h2 className="text-base sm:text-lg font-semibold text-slate-800 dark:text-slate-100 mb-1">
+              Carregando estrutura corporativa JHE...
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-md animate-pulse">
+              {loadingMessage}
+            </p>
+            <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-4 max-w-sm">
+              Sincronizando com o banco TiDB Cloud. A inicialização da API na nuvem pode levar até 45s no primeiro acesso.
+            </p>
+          </div>
+        ) : carregarError && (!allNodesFlat || allNodesFlat.length === 0) ? (
+          <div className="flex flex-col items-center justify-center min-h-[70vh] px-4 text-center">
+            <div className="w-12 h-12 rounded-full bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center justify-center mb-3">
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h3 className="text-base font-semibold text-slate-800 dark:text-slate-100 mb-1">
+              Falha ao carregar organograma
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-md mb-5">
+              Não foi possível estabelecer conexão com o servidor. A API pode estar iniciando o contêiner.
+            </p>
+            <button
+              onClick={carregarDados}
+              className="px-4 py-2 rounded-lg bg-[#0E284E] dark:bg-sky-600 text-white text-xs sm:text-sm font-medium hover:opacity-90 transition shadow-sm cursor-pointer"
+            >
+              Tentar Conectar Novamente
+            </button>
+          </div>
+        ) : abaAtiva === 'canvas' || !canManage ? (
           <OrganogramaView
             ref={organogramaViewRef}
             nos={allNodesFlat}
