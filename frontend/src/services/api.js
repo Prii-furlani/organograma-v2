@@ -1,8 +1,37 @@
 import axios from 'axios';
 
+/**
+ * Resolve a URL Base da API do Organograma com suporte robusto a múltiplos ambientes:
+ * 1. Consome `import.meta.env.VITE_API_BASE_URL` se estiver definida.
+ * 2. Em produção (ex: Vercel), caso a variável não tenha sido configurada, realiza
+ *    fallback automático para a API oficial no Render: 'https://jhe-organograma-api.onrender.com/api'.
+ * 3. Em desenvolvimento local, realiza fallback para '/api' (proxy do Vite apontando para localhost:3001).
+ * 4. Trata e remove barras trailing duplicadas ('//') e garante que a URL termine com '/api'.
+ */
+function resolveApiBaseUrl() {
+  const envUrl = (import.meta.env.VITE_API_BASE_URL || '').trim();
+
+  let targetUrl = envUrl;
+  if (!targetUrl) {
+    targetUrl = import.meta.env.PROD
+      ? 'https://jhe-organograma-api.onrender.com/api'
+      : '/api';
+  }
+
+  // Remove barras no final para prevenir duplicidade de barras nas rotas
+  targetUrl = targetUrl.replace(/\/+$/, '');
+
+  // Se for uma URL absoluta HTTP(S) que não termina com /api, anexa '/api'
+  if (/^https?:\/\//i.test(targetUrl) && !/\/api$/i.test(targetUrl)) {
+    targetUrl = `${targetUrl}/api`;
+  }
+
+  return targetUrl;
+}
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
-  timeout: 15000,
+  baseURL: resolveApiBaseUrl(),
+  timeout: 20000,
   headers: {
     'Content-Type': 'application/json'
   }

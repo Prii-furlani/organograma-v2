@@ -29,28 +29,62 @@ dotenv.config({ path: path.resolve(__dirname, '.env') });
 const app = express();
 const PORT = Number(process.env.PORT) || 3001;
 
-// Configuração de CORS com suporte a múltiplas origens por ambiente
-const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173')
-  .split(',')
-  .map((origin) => origin.trim());
+// Configuração Robusta de CORS para Produção (Vercel + Render) e Desenvolvimento Local
+const vercelPreviewRegex = /^https:\/\/organograma-v2.*\.vercel\.app$/;
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
-        return callback(null, true);
+const allowedOrigins = [
+  'https://organograma-v2-dun.vercel.app',
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:3000'
+];
+
+// Incorpora origens dinâmicas definidas na variável de ambiente CORS_ORIGIN
+if (process.env.CORS_ORIGIN) {
+  process.env.CORS_ORIGIN.split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean)
+    .forEach((origin) => {
+      if (!allowedOrigins.includes(origin)) {
+        allowedOrigins.push(origin);
       }
-      return callback(new Error(`Origem não autorizada pela política CORS: ${origin}`));
-    },
-    credentials: true
-  })
-);
+    });
+}
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Permite chamadas sem origin (Postman, curl, SSR, server-to-server)
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    const isExplicitlyAllowed = allowedOrigins.includes(origin) || allowedOrigins.includes('*');
+    const isVercelPreview = vercelPreviewRegex.test(origin);
+
+    if (isExplicitlyAllowed || isVercelPreview) {
+      return callback(null, true);
+    }
+
+    console.warn(`[CORS] Requisição bloqueada para origem não autorizada: ${origin}`);
+    return callback(null, false);
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
+  credentials: true,
+  optionsSuccessStatus: 204
+};
+
+// Aplica CORS globalmente e intercepta requisições preflight (OPTIONS)
+app.use(cors(corsOptions));
+app.options('/{*splat}', cors(corsOptions));
 
 app.use(express.json({ limit: '15mb' }));
 app.use(express.urlencoded({ extended: true, limit: '15mb' }));
 
 // Endpoint de Healthcheck
-app.get('/api/health', async (req, res) => {
+app.get(['/api/health', '/health'], async (req, res) => {
   try {
     await pool.query('SELECT 1');
     res.json({
@@ -69,19 +103,18 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
-// Registro de Rotas da API REST JHE
-app.use('/api/auth', authRoutes);
-app.use('/api/organograma', organogramaRoutes);
-app.use('/api/auditoria', auditRoutes);
-app.use('/api/logs', auditRoutes);
-app.use('/api/configuracoes', configuracoesRoutes);
+// Registro de Rotas da API REST JHE (suporte a /api/* e /*)
+app.use(['/api/auth', '/auth'], authRoutes);
+app.use(['/api/organograma', '/organograma'], organogramaRoutes);
+app.use(['/api/auditoria', '/auditoria', '/api/logs', '/logs'], auditRoutes);
+app.use(['/api/configuracoes', '/configuracoes'], configuracoesRoutes);
 
 // Rotas de Gestão de Usuários e Vínculos Estruturais
-app.get('/api/usuarios', listarUsuarios);
-app.post('/api/usuarios', criarUsuario);
-app.put('/api/usuarios/:id', atualizarUsuario);
-app.patch('/api/usuarios/:id/status', alternarStatusUsuario);
-app.post('/api/usuarios/:id/reset-senha', resetarSenhaUsuario);
+app.get(['/api/usuarios', '/usuarios'], listarUsuarios);
+app.post(['/api/usuarios', '/usuarios'], criarUsuario);
+app.put(['/api/usuarios/:id', '/usuarios/:id'], atualizarUsuario);
+app.patch(['/api/usuarios/:id/status', '/usuarios/:id/status'], alternarStatusUsuario);
+app.post(['/api/usuarios/:id/reset-senha', '/usuarios/:id/reset-senha'], resetarSenhaUsuario);
 
 // Em Produção (quando SERVE_STATIC_FRONTEND=true), serve o bundle estático do Frontend Vite
 if (process.env.SERVE_STATIC_FRONTEND === 'true') {
