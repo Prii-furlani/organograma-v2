@@ -1,9 +1,21 @@
 /**
- * =============================================================================
- * JHE ENGENHARIA & CONSULTORES ASSOCIADOS - ORGANOGRAMA CORPORATIVO v2.0
- * Script de Carga Incremental Idempotente de Colaboradores
- * Arquivo: backend/scripts/carga_incremental_colaboradores.js
- * =============================================================================
+ * ============================================================================
+ * JHE ORGANOGRAMA CORPORATIVO - SCRIPT DE CARGA INCREMENTAL DE COLABORADORES
+ * ----------------------------------------------------------------------------
+ * Arquivo: carga_incremental_colaboradores.js
+ * Módulo: Engenharia de Dados / Carga em Lote / Sincronização de Pessoal
+ * Função Principal: Executa a carga idempotente de colaboradores no TiDB Cloud,
+ * prevenindo duplicidade de registros, priorizando e-mail corporativo, vinculando
+ * cargos/setores correspondentes e alocando não identificados no nó de triagem (999).
+ *
+ * ----------------------------------------------------------------------------
+ * GUIA RÁPIDO DE MANUTENÇÃO (ONDE EDITAR SE...):
+ * • Alterar senha inicial padrão dos novos usuários: Linha ~35 (SENHA_PADRAO)
+ * • Definir nó da área de triagem transitória: Linha ~37 (NO_TRIAGEM_ID)
+ * • Regras de higienização de e-mails corporativos/pessoais: Linhas ~45-90 (cleanEmail)
+ * • Algoritmo de desduplicação e regras de SKIP: Linhas ~220-270
+ * • Leitura e parse dos dados brutos (CSV/JSON/SQL): Linhas ~140-200
+ * ============================================================================
  */
 
 import fs from 'fs';

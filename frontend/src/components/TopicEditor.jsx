@@ -1,3 +1,23 @@
+/**
+ * ============================================================================
+ * JHE ORGANOGRAMA CORPORATIVO - EDITOR HIERÁRQUICO EM TÓPICOS
+ * ----------------------------------------------------------------------------
+ * Arquivo: TopicEditor.jsx
+ * Módulo: Editor Estrutural / Tabela Hierárquica / Drag and Drop
+ * Função Principal: Permite visualizar e manipular toda a hierarquia corporativa
+ * em formato de tabela expansível/recolhível com suporte a Drag & Drop para
+ * mover ramos, histórico de desfazer/refazer (Undo/Redo) e layout mobile-first.
+ *
+ * ----------------------------------------------------------------------------
+ * GUIA RÁPIDO DE MANUTENÇÃO (ONDE EDITAR SE...):
+ * • Alterar componente de linha recursiva (TopicItem): Linha ~40
+ * • Ajustar lógica de Drag & Drop (onDragStart/Drop): Linhas ~120-180
+ * • Modificar botões de ação e modais de confirmação: Linhas ~190-250
+ * • Alterar filtros de busca e expansão em massa: Linhas ~450-520
+ * • Gerenciar pilha de histórico (Undo/Redo): Linhas ~380-420
+ * ============================================================================
+ */
+
 import React, { useState, useMemo, useCallback } from 'react';
 import {
   ArrowLeft,

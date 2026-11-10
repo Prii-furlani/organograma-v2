@@ -1,3 +1,22 @@
+/**
+ * ============================================================================
+ * JHE ORGANOGRAMA CORPORATIVO - BARRA FLUTUANTE DE CONTROLES DO CANVAS
+ * ----------------------------------------------------------------------------
+ * Arquivo: CanvasControls.jsx
+ * Módulo: Interface de Usuário / Controles Interativos do Canvas
+ * Função Principal: Barra flutuante que disponibiliza controles de zoom (+/-),
+ * recenteamento/fit, expansão/recolhimento geral, bloqueio de tela (pan/zoom),
+ * alternância de Dark Mode, atalho de ajuda e menu suspenso de exportação.
+ *
+ * ----------------------------------------------------------------------------
+ * GUIA RÁPIDO DE MANUTENÇÃO (ONDE EDITAR SE...):
+ * • Alterar botões de zoom ou recenteamento: Linha ~60 (onZoomIn, onZoomOut, onFit)
+ * • Modificar opções de exportação (PNG, SVG, PDF): Linha ~130 (exportMenu)
+ * • Ajustar botão de bloqueio de tela: Linha ~180 (isCanvasLocked)
+ * • Alternar estilos e posições da barra flutuante: Linha ~55 (fixed bottom-6)
+ * ============================================================================
+ */
+
 import React, { useState, useEffect, useRef } from 'react';
 import {
   ZoomIn,

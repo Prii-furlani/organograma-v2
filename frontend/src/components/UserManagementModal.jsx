@@ -1,3 +1,23 @@
+/**
+ * ============================================================================
+ * JHE ORGANOGRAMA CORPORATIVO - GESTÃO DE USUÁRIOS E COLABORADORES
+ * ----------------------------------------------------------------------------
+ * Arquivo: UserManagementModal.jsx
+ * Módulo: Painel Administrativo / Controle de Acessos / Vínculos de Equipe
+ * Função Principal: Interface administrativa para cadastro, edição, vinculação
+ * de colaboradores a múltiplos nós da árvore, reset de senhas, ativação/inativação
+ * e ordenação com cabeçalho fixo (sticky header).
+ *
+ * ----------------------------------------------------------------------------
+ * GUIA RÁPIDO DE MANUTENÇÃO (ONDE EDITAR SE...):
+ * • Alterar cabeçalho fixo (sticky) da tabela: Linhas ~440-470 (sticky top-0 z-20)
+ * • Adicionar novos campos no formulário de usuário: Linhas ~520-650
+ * • Ajustar chamada da API para salvar/atualizar usuário: Linha ~210 (handleSalvarUsuario)
+ * • Configurar reset de senha e envio de credenciais: Linha ~310 (handleResetSenha)
+ * • Filtros e busca rápida de colaboradores: Linhas ~370-410
+ * ============================================================================
+ */
+
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   X,

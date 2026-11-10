@@ -1,3 +1,23 @@
+/**
+ * ============================================================================
+ * JHE ORGANOGRAMA CORPORATIVO - COMPONENTE INDIVIDUAL DE CARD
+ * ----------------------------------------------------------------------------
+ * Arquivo: NodeCard.jsx (e alias OrgNode.jsx)
+ * Módulo: Componente Visual / Design System / Card do Nó
+ * Função Principal: Renderiza o cartão visual com borda temática superior,
+ * tag de nível hierárquico, título multilinha com contenção CSS, rodapé com
+ * avatares e botão de expansão inferior centralizado a 50%.
+ *
+ * ----------------------------------------------------------------------------
+ * GUIA RÁPIDO DE MANUTENÇÃO (ONDE EDITAR SE...):
+ * • Alterar largura / altura mínima do card: Linha ~35 (w-[260px] min-h-[154px])
+ * • Alterar folga inferior de segurança: Linha ~35 (pb-5)
+ * • Limitar caracteres do nome do líder: Linha ~95 (max-w-[115px] truncate)
+ * • Modificar botão de expansão/colapso: Linha ~135 (absolute -bottom-3)
+ * • Ajustar cores no Dark/Light Mode: Linha ~37 (bg-slate-900 / bg-white)
+ * ============================================================================
+ */
+
 import React from 'react';
 
 /**

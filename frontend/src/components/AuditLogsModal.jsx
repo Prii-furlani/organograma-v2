@@ -1,3 +1,22 @@
+/**
+ * ============================================================================
+ * JHE ORGANOGRAMA CORPORATIVO - TRILHA DE AUDITORIA E LOGS DO SISTEMA
+ * ----------------------------------------------------------------------------
+ * Arquivo: AuditLogsModal.jsx
+ * Módulo: Governança / Auditoria / Compliance e Rastreabilidade
+ * Função Principal: Exibe o registro cronológico de todas as ações executadas
+ * no sistema (criação, edição, movimentação e exclusão de nós e usuários), com
+ * filtros por módulo, responsável, período e exportação de relatório em PDF.
+ *
+ * ----------------------------------------------------------------------------
+ * GUIA RÁPIDO DE MANUTENÇÃO (ONDE EDITAR SE...):
+ * • Adicionar nova ação ou módulo rastreado: Linhas ~30-50 (ACOES / MODULOS)
+ * • Configurar cabeçalho fixo (sticky) da tabela: Linhas ~310-330 (sticky top-0)
+ * • Ajustar exportação do relatório para PDF: Linha ~180 (handleExportPdf)
+ * • Alterar paginação e filtros de auditoria: Linhas ~80-120 (carregarLogs)
+ * ============================================================================
+ */
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { X, ShieldCheck, FileDown, Search, Loader2 } from 'lucide-react';
 import api from '../services/api';

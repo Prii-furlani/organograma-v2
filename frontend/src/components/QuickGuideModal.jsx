@@ -1,3 +1,22 @@
+/**
+ * ============================================================================
+ * JHE ORGANOGRAMA CORPORATIVO - MODAL DE GUIA RÁPIDO E INSTRUÇÕES
+ * ----------------------------------------------------------------------------
+ * Arquivo: QuickGuideModal.jsx
+ * Módulo: Ajuda Interativa / Onboarding / Governança
+ * Função Principal: Apresenta ao usuário abas didáticas e cards explicativos
+ * sobre Navegação, Editor em Tópicos, Perfis & Auditoria, e Arquitetura de Nós
+ * e Hierarquia da governança corporativa da JHE Consultores.
+ *
+ * ----------------------------------------------------------------------------
+ * GUIA RÁPIDO DE MANUTENÇÃO (ONDE EDITAR SE...):
+ * • Adicionar nova aba temática: Linha ~35 (seção no array sections)
+ * • Alterar textos ou cartões de instrução: Linhas ~40-160 (cards array)
+ * • Editar dicas em destaque na base: Linha ~130 (seção tip)
+ * • Modificar estilos de abas ou cores: Linha ~205 (className das abas)
+ * ============================================================================
+ */
+
 import React, { useState } from 'react';
 import {
   HelpCircle,

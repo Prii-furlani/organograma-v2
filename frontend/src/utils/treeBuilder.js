@@ -1,7 +1,20 @@
 /**
- * Utilitário de Montagem, Ordenação Rígida e Normalização Hierárquica (treeBuilder.js)
- * Garante precedência institucional (Staff/OIA -> Diretorias -> Gerências/Coordenações -> Equipes/Contratos)
- * e ordenação determinística de irmãos antes de alimentar o d3.stratify do d3-org-chart.
+ * ============================================================================
+ * JHE ORGANOGRAMA CORPORATIVO - CONSTRUTOR E NORMALIZADOR DA ÁRVORE
+ * ----------------------------------------------------------------------------
+ * Arquivo: treeBuilder.js
+ * Módulo: Algoritmos de Grafos / Normalização e Precedência Hierárquica
+ * Função Principal: Processa a lista plana de nós vinda do backend, valida
+ * nós órfãos, calcula totais acumulados de colaboradores e aplica ordenação
+ * rígida e determinística (Staff/OIA -> Diretorias -> Gerências -> Equipes).
+ *
+ * ----------------------------------------------------------------------------
+ * GUIA RÁPIDO DE MANUTENÇÃO (ONDE EDITAR SE...):
+ * • Alterar ordem de precedência por nível (slugs): Linha ~35 (SLUG_PRECEDENCE)
+ * • Definir slugs classificados como Staff/Apoio: Linha ~28 (STAFF_SLUGS)
+ * • Função de contagem acumulada de subordinados: Linha ~120 (calcularTotaisAcumulados)
+ * • Algoritmo central de ordenação e montagem: Linha ~160 (buildAndSortOrgTree)
+ * ============================================================================
  */
 
 const STAFF_SLUGS = new Set(['staff', 'oia', 'apoio']);

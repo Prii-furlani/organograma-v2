@@ -1,3 +1,24 @@
+/**
+ * ============================================================================
+ * JHE ORGANOGRAMA CORPORATIVO - CONTROLADOR DO ORGANOGRAMA E GRAFOS
+ * ----------------------------------------------------------------------------
+ * Arquivo: organogramaController.js
+ * Módulo: Backend / Regras de Negócio do Organograma / Operações de Banco SQL
+ * Função Principal: Gerencia consultas da árvore, criação, edição, exclusão e
+ * movimentação de nós com transações atômicas, reordenação de irmãos, contagem
+ * de colaboradores diretos/acumulados e geração de logs de auditoria.
+ *
+ * ----------------------------------------------------------------------------
+ * GUIA RÁPIDO DE MANUTENÇÃO (ONDE EDITAR SE...):
+ * • Consulta principal da árvore (nós e pessoas): Linha ~140 (obterOrganograma)
+ * • Mover nó ou alterar nó pai (com transação): Linha ~750 (moverNo)
+ * • Criar novo setor/nó na estrutura: Linha ~380 (criarNo)
+ * • Atualizar dados do setor (título, gestor, etc.): Linha ~520 (atualizarNo)
+ * • Excluir setor e reatribuir subordinados: Linha ~880 (excluirNo)
+ * • Dados de fallback em caso de banco offline: Linhas ~25-100 (FALLBACK_COLABORADORES)
+ * ============================================================================
+ */
+
 import pool, { withTransaction } from '../database/database.js';
 import { registrarLogAuditoria } from '../utils/auditLogger.js';
 import { getFallbackUsuarios } from './userController.js';

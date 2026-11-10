@@ -1,3 +1,23 @@
+/**
+ * ============================================================================
+ * JHE ORGANOGRAMA CORPORATIVO - ARQUIVO PRINCIPAL DA APLICAÇÃO
+ * ----------------------------------------------------------------------------
+ * Arquivo: App.jsx
+ * Módulo: Orquestração Central / Roteamento de Estado / Context Providers
+ * Função Principal: Componente raiz que orquestra os contextos globais (Tema,
+ * Autenticação e Configurações), gerencia a carga e mutações do organograma,
+ * sincronização em tempo real e abertura de modais administrativos.
+ *
+ * ----------------------------------------------------------------------------
+ * GUIA RÁPIDO DE MANUTENÇÃO (ONDE EDITAR SE...):
+ * • Alterar dados iniciais ou nós de fallback: Linha ~45 (procure por INITIAL_NOS)
+ * • Adicionar ou alterar catálogo de níveis: Linha ~30 (procure por INITIAL_NIVEIS)
+ * • Ajustar tempo de inatividade / logout automático: Linha ~140 (useIdleTimeout)
+ * • Alterar alternância Canvas vs Tópicos: Linha ~210 (modoExibicao / setModoExibicao)
+ * • Conectar nova rota ou modal global: Linha ~480 (renderização de modais)
+ * ============================================================================
+ */
+
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import Swal from 'sweetalert2';
 import { ThemeProvider } from './context/ThemeContext';

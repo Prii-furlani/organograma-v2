@@ -1,3 +1,23 @@
+/**
+ * ============================================================================
+ * JHE ORGANOGRAMA CORPORATIVO - CLIENTE HTTP E INTEGRAÇÃO DE API
+ * ----------------------------------------------------------------------------
+ * Arquivo: api.js
+ * Módulo: Comunicação de Rede / Axios Client / Autenticação JWT
+ * Função Principal: Configura a instância Axios com resolução dinâmica de URL
+ * (Vercel Prod, Render Backend e Localhost Dev), injeção automática de token JWT
+ * e tratamento transparente de 401 e cold-start.
+ *
+ * ----------------------------------------------------------------------------
+ * GUIA RÁPIDO DE MANUTENÇÃO (ONDE EDITAR SE...):
+ * • Alterar URL base ou fallback do Render: Linha ~35 (resolveApiBaseUrl)
+ * • Configurar timeout (cold-start resiliente): Linha ~55 (timeout: 60000)
+ * • Ajustar interceptor de autenticação JWT: Linha ~65 (api.interceptors.request)
+ * • Tratar expiração de sessão / token inválido: Linha ~75 (api.interceptors.response)
+ * • Funções de consulta de dados da árvore: Linhas ~100-150 (fetchFlatNodesList)
+ * ============================================================================
+ */
+
 import axios from 'axios';
 
 /**

@@ -1,3 +1,22 @@
+/**
+ * ============================================================================
+ * JHE ORGANOGRAMA CORPORATIVO - SERVIDOR DE API BACKEND EXPRESS
+ * ----------------------------------------------------------------------------
+ * Arquivo: server.js
+ * Módulo: Servidor HTTP / Configurações de Middleware / Rotas Principais
+ * Função Principal: Ponto de entrada do backend Node.js que inicializa o Express,
+ * gerencia variáveis de ambiente, configura CORS para Vercel e Render, testa
+ * a conexão com o TiDB Cloud e orquestra todas as rotas da API REST.
+ *
+ * ----------------------------------------------------------------------------
+ * GUIA RÁPIDO DE MANUTENÇÃO (ONDE EDITAR SE...):
+ * • Alterar porta do servidor: Linha ~50 (PORT)
+ * • Configurar domínios permitidos no CORS: Linha ~55 (allowedOrigins / vercelPreviewRegex)
+ * • Registrar novas rotas da API: Linha ~80-110 (app.use('/api/...'))
+ * • Ajustar tratamento global de erros / 404: Linha ~130 (errorHandler / notFoundHandler)
+ * ============================================================================
+ */
+
 import express from 'express';
 import cors from 'cors';
 import path from 'path';

@@ -1,3 +1,27 @@
+/**
+ * ============================================================================
+ * JHE ORGANOGRAMA CORPORATIVO - MOTOR VISUAL E CANVAS DO GRAFO
+ * ----------------------------------------------------------------------------
+ * Arquivo: OrganogramaView.jsx
+ * Módulo: Visualização Gráfica / D3 OrgChart / SVG Interativo / Exportação
+ * Função Principal: Renderiza o organograma espacial interativo baseado em
+ * D3.js e d3-org-chart, calculando layout hierárquico em 2 andares (Co-CEOs e
+ * Diretorias), conectores ortogonais em SVG, badges desacoplados e exportação
+ * em alta resolução (PNG, SVG e PDF vetorial).
+ *
+ * ----------------------------------------------------------------------------
+ * GUIA RÁPIDO DE MANUTENÇÃO (ONDE EDITAR SE...):
+ * • Alterar dimensões do card: Linhas ~45-46 (CARD_WIDTH / CARD_HEIGHT)
+ * • Alterar espaçamento vertical/horizontal: Linhas ~47-50 (VERTICAL_GAP / HORIZONTAL_GAP)
+ * • Algoritmo dos 2 andares (Co-CEOs vs Diretorias): Linha ~170 (organizarFilhosEmDoisAndares)
+ * • Traçado dos conectores SVG em "T" ortogonal: Linha ~880 (diagonal)
+ * • Botão de expansão/colapso inferior: Linha ~930 (buttonContent / .jhe-expand-pill)
+ * • Template HTML do card (avatar, textos, badge): Linha ~1140 (nodeContent)
+ * • Motor de exportação para PNG / SVG / PDF: Linha ~550 (handleExportCanvas)
+ * • Popover flutuante da equipe: Linha ~1440 (renderização desacoplada de membros)
+ * ============================================================================
+ */
+
 import React, { useEffect, useRef, useState, useMemo, forwardRef, useImperativeHandle, useCallback } from 'react';
 import { OrgChart } from 'd3-org-chart';
 import * as d3 from 'd3';
