@@ -536,6 +536,38 @@ svg.svg-chart-container .node-foreign-object {
   cursor: not-allowed;
 }
 
+/* Responsividade Mobile para o Editor em Tópicos (< 768px) */
+@media (max-width: 767px) {
+  .topic-editor-navbar {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0.75rem 1rem;
+    gap: 0.75rem;
+  }
+  .topic-editor-info-bar {
+    padding: 0.5rem 1rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+  .topic-editor-main-area {
+    padding: 0.5rem;
+  }
+  .topic-editor-card {
+    border-radius: 0.75rem;
+  }
+  .topic-table-header {
+    display: none !important;
+  }
+  .topic-indent-guide {
+    width: 8px !important;
+    margin-left: 2px !important;
+  }
+  .topic-col-subordinates {
+    display: none !important;
+  }
+}
+
 .jhe-btn-floating-logs {
   position: fixed;
   bottom: 1.5rem;

@@ -17,7 +17,8 @@ import {
   ChevronsUpDown,
   ChevronsDownUp,
   X,
-  HelpCircle
+  HelpCircle,
+  Users
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { useAuth } from '../context/AuthContext';
@@ -214,14 +215,11 @@ function TopicItem({
   return (
     <>
       <div
-        draggable={isDraggable}
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
         onDragOver={handleDragOver}
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className={`topic-row-bar transition-all duration-150 ${!canEdit ? 'is-scope-locked' : ''} ${
+        className={`topic-row-bar flex flex-col md:flex-row md:items-center md:justify-between p-3 md:py-2.5 md:px-5 gap-2 border-b transition-all duration-150 ${!canEdit ? 'is-scope-locked' : ''} ${
           isDragOver
             ? 'is-drag-over border-2 border-dashed border-sky-400 bg-sky-50/70 dark:bg-sky-950/40 shadow-sm'
             : ''
@@ -230,17 +228,20 @@ function TopicItem({
         }`}
       >
         {/* Coluna 1 — Informações e Indentação (topic-col-info) */}
-        <div className="topic-col-info">
+        <div className="topic-col-info flex items-start sm:items-center min-w-0 flex-1 w-full">
           {/* Guias de Indentação (topic-indent-group) */}
-          <div className="topic-indent-group">
+          <div className="topic-indent-group shrink-0 flex items-stretch self-stretch">
             {Array.from({ length: level }).map((_, idx) => (
               <span key={idx} className="topic-indent-guide" />
             ))}
           </div>
 
-          {/* Alça de Arraste */}
+          {/* Alça de Arraste (Restrita a Desktop para prevenir travamento de scroll vertical táctil) */}
           <span
-            className={`mr-2 flex items-center justify-center p-1 rounded-md transition-colors ${
+            draggable={isDraggable}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+            className={`hidden sm:flex mr-2 items-center justify-center p-1 rounded-md transition-colors shrink-0 ${
               isDraggable
                 ? 'cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
                 : 'opacity-20 cursor-not-allowed text-slate-300'
@@ -260,56 +261,75 @@ function TopicItem({
           <button
             type="button"
             onClick={() => hasChildren && onToggleExpand(String(node.id))}
-            className="topic-chevron-box"
+            className="topic-chevron-box shrink-0"
             style={{ visibility: hasChildren ? 'visible' : 'hidden' }}
             title={isExpanded ? 'Recolher subárvore' : 'Expandir subárvore'}
+            aria-label={isExpanded ? 'Recolher subárvore' : 'Expandir subárvore'}
           >
             {shouldRenderChildren ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
           </button>
 
           {/* Avatar (topic-avatar-squircle) */}
           <div
-            className="topic-avatar-squircle"
+            className="topic-avatar-squircle shrink-0"
             style={{ backgroundColor: node.cor_hex || 'var(--jhe-primary)' }}
           >
-            <User size={15} color="#FFFFFF" />
+            <User size={14} color="#FFFFFF" />
           </div>
 
-          {/* Textos e Selo de Permissão (topic-text-group) */}
-          <div className="topic-text-group">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-bold text-sm" style={{ color: 'var(--jhe-text-main)' }}>
+          {/* Textos e Badges (topic-text-group) */}
+          <div className="topic-text-group min-w-0 flex-1">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="font-bold text-xs sm:text-sm truncate max-w-full" style={{ color: 'var(--jhe-text-main)' }}>
                 {node.titulo}
               </span>
 
+              <span className={`slug-badge slug-badge-${node.nivel_slug || 'diretoria'} shrink-0 text-[10px] font-bold uppercase`}>
+                {node.nivel_nome || node.tipo || node.sigla}
+              </span>
+
               {!canEdit && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/15 text-amber-500 border border-amber-500/30">
-                  <ShieldAlert size={11} />
-                  Somente leitura
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[9px] font-semibold bg-amber-500/15 text-amber-500 border border-amber-500/30 shrink-0">
+                  <ShieldAlert size={10} />
+                  Leitura
                 </span>
               )}
             </div>
 
-            <div className="flex items-center gap-2 flex-wrap mt-0.5">
-              <span className={`slug-badge slug-badge-${node.nivel_slug || 'diretoria'}`}>
-                {node.nivel_nome || node.tipo || node.sigla}
+            {/* Badges de Subordinados no Mobile (abaixo do nome, NUNCA sobreposto) */}
+            <div className="md:hidden flex items-center gap-2 mt-1.5 flex-wrap">
+              <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 font-medium">
+                <Users className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                {diretos} diretos
               </span>
-              <span className="text-xs truncate max-w-xl" style={{ color: 'var(--jhe-text-muted)' }}>
-                {node.responsavel
-                  ? `${
-                      Array.isArray(node.responsavel)
-                        ? node.responsavel.join(' & ')
-                        : node.responsavel
-                    } — `
-                  : ''}
+              {abaixo > diretos && (
+                <span className="text-[11px] text-slate-400 font-normal">
+                  ({abaixo} no total)
+                </span>
+              )}
+              {node.responsavel && (
+                <span className="text-[11px] text-slate-400 truncate max-w-[180px]">
+                  • {Array.isArray(node.responsavel) ? node.responsavel.join(' & ') : node.responsavel}
+                </span>
+              )}
+            </div>
+
+            {/* Descrição em Desktop */}
+            <div className="hidden md:flex items-center gap-2 flex-wrap mt-0.5 text-xs" style={{ color: 'var(--jhe-text-muted)' }}>
+              {node.responsavel && (
+                <span>
+                  {Array.isArray(node.responsavel) ? node.responsavel.join(' & ') : node.responsavel} —
+                </span>
+              )}
+              <span className="truncate max-w-md">
                 {node.descricao || 'Sem descrição cadastrada'}
               </span>
             </div>
           </div>
         </div>
 
-        {/* Coluna 2 — Contador de Subordinados (topic-col-subordinates) */}
-        <div className="topic-col-subordinates">
+        {/* Coluna 2 — Contador de Subordinados em Desktop (topic-col-subordinates) */}
+        <div className="hidden md:flex topic-col-subordinates shrink-0">
           <span className="text-xs font-bold" style={{ color: 'var(--jhe-text-main)' }}>
             {diretos} diretos
           </span>
@@ -318,14 +338,15 @@ function TopicItem({
           </span>
         </div>
 
-        {/* Coluna 3 — Botões de Ação (topic-col-actions) */}
-        <div className="topic-col-actions">
+        {/* Coluna 3 — Botões de Ação (Acessíveis para toque no mobile com 36x36px) */}
+        <div className="flex items-center justify-end gap-1.5 self-end md:self-center w-full md:w-[120px] pt-1.5 md:pt-0 border-t md:border-t-0 border-slate-100 dark:border-slate-800/60 shrink-0">
           <button
             type="button"
             disabled={!canEdit}
             onClick={() => onOpenCreateDrawer(node)}
-            className="topic-action-btn"
+            className="min-w-[36px] min-h-[36px] w-9 h-9 md:w-[1.9rem] md:h-[1.9rem] md:min-w-0 md:min-h-0 rounded-lg md:rounded-md border border-slate-200 dark:border-slate-700/80 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             title="Adicionar Subordinado direto neste setor"
+            aria-label="Adicionar subordinado"
           >
             <Plus size={15} />
           </button>
@@ -334,8 +355,9 @@ function TopicItem({
             type="button"
             disabled={!canEdit}
             onClick={() => onEditNode(node)}
-            className="topic-action-btn"
+            className="min-w-[36px] min-h-[36px] w-9 h-9 md:w-[1.9rem] md:h-[1.9rem] md:min-w-0 md:min-h-0 rounded-lg md:rounded-md border border-slate-200 dark:border-slate-700/80 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             title="Editar dados deste setor"
+            aria-label="Editar setor"
           >
             <Edit3 size={14} />
           </button>
@@ -344,12 +366,13 @@ function TopicItem({
             type="button"
             disabled={!canEdit || node.parent_id === null}
             onClick={handleDelete}
-            className="topic-action-btn topic-action-btn-danger"
+            className="min-w-[36px] min-h-[36px] w-9 h-9 md:w-[1.9rem] md:h-[1.9rem] md:min-w-0 md:min-h-0 rounded-lg md:rounded-md border border-slate-200 dark:border-slate-700/80 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             title={
               node.parent_id === null
                 ? 'O nó raiz institucional não pode ser excluído'
                 : 'Excluir setor'
             }
+            aria-label="Excluir setor"
           >
             <Trash2 size={14} />
           </button>
@@ -784,53 +807,87 @@ export default function TopicEditor({
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] overflow-hidden">
       {/* A. Cabeçalho Superior (header.topic-editor-navbar) */}
-      <header className="topic-editor-navbar">
-        {/* Bloco Esquerdo (Navegação e Título) */}
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-2 rounded-lg border hover:opacity-80 transition cursor-pointer"
-            style={{
-              borderColor: 'var(--jhe-border-subtle)',
-              color: 'var(--jhe-text-main)'
-            }}
-            title="Voltar ao mapa visual do organograma"
-          >
-            <ArrowLeft size={17} />
-          </button>
+      <header className="topic-editor-navbar flex flex-col md:flex-row md:items-center md:justify-between gap-3 p-3 sm:p-4 md:px-6 md:py-3">
+        {/* Linha 1 (Mobile): Botão de voltar, Título e Usuário */}
+        <div className="flex items-center justify-between w-full md:w-auto gap-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-2 rounded-lg border hover:opacity-80 transition cursor-pointer shrink-0"
+              style={{
+                borderColor: 'var(--jhe-border-subtle)',
+                color: 'var(--jhe-text-main)'
+              }}
+              title="Voltar ao mapa visual do organograma"
+              aria-label="Voltar ao mapa"
+            >
+              <ArrowLeft size={17} />
+            </button>
 
-          <div
-            className="p-2 rounded-lg flex items-center justify-center"
-            style={{
-              backgroundColor: 'rgba(25, 71, 117, 0.12)',
-              color: 'var(--jhe-primary-lighter)'
-            }}
-          >
-            <GripVertical size={18} />
-          </div>
-
-          <div>
-            <div className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--jhe-text-muted)' }}>
-              {usuario?.nome || 'Gestor JHE'} • {roleGlobal}
+            <div
+              className="p-2 rounded-lg hidden sm:flex items-center justify-center shrink-0"
+              style={{
+                backgroundColor: 'rgba(25, 71, 117, 0.12)',
+                color: 'var(--jhe-primary-lighter)'
+              }}
+            >
+              <GripVertical size={18} />
             </div>
-            <h2 className="text-base font-bold leading-tight" style={{ color: 'var(--jhe-text-main)' }}>
-              Editor em tópicos
-            </h2>
+
+            <div className="min-w-0">
+              <div className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider truncate" style={{ color: 'var(--jhe-text-muted)' }}>
+                {usuario?.nome || 'Gestor JHE'} • {roleGlobal}
+              </div>
+              <h2 className="text-sm sm:text-base font-bold leading-tight truncate" style={{ color: 'var(--jhe-text-main)' }}>
+                Editor em tópicos
+              </h2>
+            </div>
           </div>
         </div>
 
-        {/* Bloco Direito (Ferramentas de Árvore, Pesquisa e Criação) */}
-        <div className="flex items-center gap-2.5 flex-wrap">
-          {/* Botões Desfazer / Refazer (Undo2 / Redo2) */}
-          <div className="flex items-center gap-1">
+        {/* Linha 2 (Mobile): Campo de Pesquisa ocupando 100% da largura */}
+        <div className="relative w-full md:w-60 lg:w-72 order-2 md:order-none">
+          <Search
+            size={14}
+            className="absolute left-3 top-1/2 -translate-y-1/2"
+            style={{ color: 'var(--jhe-primary-lighter)' }}
+          />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Localizar um tópico..."
+            className="w-full pl-8 pr-7 py-2 md:py-1.5 rounded-lg text-xs border bg-transparent focus:outline-none transition-colors"
+            style={{
+              borderColor: searchQuery ? 'var(--jhe-primary-lighter)' : 'var(--jhe-border-subtle)',
+              color: 'var(--jhe-text-main)'
+            }}
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 opacity-60 hover:opacity-100 cursor-pointer"
+              aria-label="Limpar pesquisa"
+            >
+              <X size={13} />
+            </button>
+          )}
+        </div>
+
+        {/* Linha 3 (Mobile): Barra de botões de atalho com scroll horizontal suave ou botões compactos */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 w-full md:w-auto max-w-full custom-scrollbar-subtle order-3 md:order-none">
+          {/* Botões Desfazer / Refazer */}
+          <div className="flex items-center gap-1 shrink-0">
             <button
               type="button"
               disabled={historyStack.length === 0}
               onClick={handleUndo}
-              className="p-2 rounded-lg border disabled:opacity-35 cursor-pointer disabled:cursor-not-allowed"
+              className="p-2 rounded-lg border disabled:opacity-35 cursor-pointer disabled:cursor-not-allowed hover:bg-slate-100 dark:hover:bg-slate-800 transition"
               style={{ borderColor: 'var(--jhe-border-subtle)', color: 'var(--jhe-text-main)' }}
               title="Desfazer última movimentação"
+              aria-label="Desfazer"
             >
               <Undo2 size={15} />
             </button>
@@ -838,64 +895,38 @@ export default function TopicEditor({
               type="button"
               disabled={redoStack.length === 0}
               onClick={handleRedo}
-              className="p-2 rounded-lg border disabled:opacity-35 cursor-pointer disabled:cursor-not-allowed"
+              className="p-2 rounded-lg border disabled:opacity-35 cursor-pointer disabled:cursor-not-allowed hover:bg-slate-100 dark:hover:bg-slate-800 transition"
               style={{ borderColor: 'var(--jhe-border-subtle)', color: 'var(--jhe-text-main)' }}
               title="Refazer movimentação"
+              aria-label="Refazer"
             >
               <Redo2 size={15} />
             </button>
           </div>
 
-          {/* Grupo de Expansão (jhe-tree-toggle-group) */}
-          <div className="jhe-tree-toggle-group">
+          {/* Grupo de Expansão */}
+          <div className="jhe-tree-toggle-group shrink-0">
             <button
               type="button"
               onClick={handleExpandAll}
-              className="px-2.5 py-1.5 text-xs font-semibold flex items-center gap-1 cursor-pointer hover:opacity-85"
+              className="px-2.5 py-1.5 text-xs font-semibold flex items-center gap-1 cursor-pointer hover:opacity-85 whitespace-nowrap"
               title="Abre todos os níveis da árvore simultaneamente"
             >
               <ChevronsUpDown size={13} />
-              Expandir tudo
+              <span className="hidden sm:inline">Expandir tudo</span>
+              <span className="sm:hidden">Expandir</span>
             </button>
             <div className="w-px h-4" style={{ backgroundColor: 'var(--jhe-border-subtle)' }} />
             <button
               type="button"
               onClick={handleCollapseAll}
-              className="px-2.5 py-1.5 text-xs font-semibold flex items-center gap-1 cursor-pointer hover:opacity-85"
+              className="px-2.5 py-1.5 text-xs font-semibold flex items-center gap-1 cursor-pointer hover:opacity-85 whitespace-nowrap"
               title="Fecha todas as subárvores mantendo apenas Co-CEOs aberto"
             >
               <ChevronsDownUp size={13} />
-              Recolher tudo
+              <span className="hidden sm:inline">Recolher tudo</span>
+              <span className="sm:hidden">Recolher</span>
             </button>
-          </div>
-
-          {/* Campo de Pesquisa Interna ("Localizar um tópico...") */}
-          <div className="relative w-64">
-            <Search
-              size={14}
-              className="absolute left-3 top-1/2 -translate-y-1/2"
-              style={{ color: 'var(--jhe-primary-lighter)' }}
-            />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Localizar um tópico..."
-              className="w-full pl-8 pr-7 py-1.5 rounded-lg text-xs border bg-transparent focus:outline-none"
-              style={{
-                borderColor: searchQuery ? 'var(--jhe-primary-lighter)' : 'var(--jhe-border-subtle)',
-                color: 'var(--jhe-text-main)'
-              }}
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 opacity-60 hover:opacity-100 cursor-pointer"
-              >
-                <X size={13} />
-              </button>
-            )}
           </div>
 
           {/* Botão Guia Rápido */}
@@ -903,7 +934,7 @@ export default function TopicEditor({
             <button
               type="button"
               onClick={onOpenQuickGuide}
-              className="px-3 py-1.5 rounded-lg text-xs font-semibold border flex items-center gap-1.5 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+              className="px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold border flex items-center gap-1.5 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition shrink-0 whitespace-nowrap"
               style={{
                 borderColor: 'var(--jhe-border-subtle)',
                 color: 'var(--jhe-text-main)'
@@ -915,15 +946,16 @@ export default function TopicEditor({
             </button>
           )}
 
-          {/* Botão + Novo tópico (handleCreateNewRoot) */}
+          {/* Botão + Novo tópico */}
           <button
             type="button"
             onClick={handleCreateNewRoot}
-            className="px-3.5 py-1.5 rounded-lg text-xs font-bold text-white flex items-center gap-1.5 cursor-pointer hover:opacity-95 shadow-xs"
+            className="px-3 sm:px-3.5 py-1.5 rounded-lg text-xs font-bold text-white flex items-center gap-1.5 cursor-pointer hover:opacity-95 shadow-xs shrink-0 whitespace-nowrap ml-auto md:ml-0"
             style={{ backgroundColor: 'var(--jhe-primary)' }}
           >
             <Plus size={15} />
-            Novo tópico
+            <span className="hidden sm:inline">Novo tópico</span>
+            <span className="sm:hidden">+ Tópico</span>
           </button>
         </div>
       </header>
@@ -945,8 +977,8 @@ export default function TopicEditor({
       {/* C. Área Principal: Tabela Hierárquica com Scroll Interno (main.topic-editor-main-area) */}
       <main className="topic-editor-main-area">
         <div className="topic-editor-card">
-          {/* Cabeçalho Fixo de 3 Colunas (div.topic-table-header) */}
-          <div className="topic-table-header">
+          {/* Cabeçalho Fixo de 3 Colunas (div.topic-table-header - Oculto em telas móveis) */}
+          <div className="topic-table-header hidden md:flex">
             <div className="flex-1 pl-14">Estrutura e Hierarquia</div>
             <div className="w-[180px]">Subordinados</div>
             <div className="w-[120px] text-right">Ações</div>
