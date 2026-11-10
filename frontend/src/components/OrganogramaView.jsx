@@ -1453,10 +1453,7 @@ const OrganogramaView = forwardRef(function OrganogramaView(
           if (isCanvasLocked) return;
           chartRef.current?.collapseAll();
           recenterRootNode(true);
-          setModoVisao('executivo');
         }}
-        modoVisao={modoVisao}
-        onToggleModoVisao={handleToggleModoVisao}
         onExportImage={handleExportCanvas}
         isCanvasLocked={isCanvasLocked}
         onToggleLock={() => setIsCanvasLocked((prev) => !prev)}

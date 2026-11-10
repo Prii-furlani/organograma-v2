@@ -11,8 +11,6 @@ import {
   Unlock,
   Plus,
   HelpCircle,
-  Briefcase,
-  Layers,
   Download,
   Image,
   FileImage,
@@ -26,8 +24,6 @@ export default function CanvasControls({
   onFit,
   onExpandAll,
   onCollapseAll,
-  modoVisao = 'completo',
-  onToggleModoVisao,
   onExportImage,
   isCanvasLocked,
   onToggleLock,
@@ -50,8 +46,6 @@ export default function CanvasControls({
     }
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [exportMenuOpen]);
-
-  const isExecutive = modoVisao === 'executivo';
 
   return (
     <div
@@ -93,35 +87,7 @@ export default function CanvasControls({
 
       <div className="h-4 w-px mx-0.5 bg-slate-200 dark:bg-slate-700" />
 
-      {/* 4. Alternância: Visão Executiva vs. Visão Completa */}
-      {onToggleModoVisao && (
-        <button
-          type="button"
-          disabled={isCanvasLocked}
-          onClick={onToggleModoVisao}
-          className={`px-2.5 py-1.5 rounded-xl cursor-pointer transition flex items-center gap-1.5 text-xs font-semibold ${
-            isExecutive
-              ? 'bg-[#0E284E] text-white shadow-xs dark:bg-sky-500 dark:text-slate-950 ring-1 ring-[#0E284E]/30 dark:ring-sky-400'
-              : 'text-[#475569] hover:text-[#0E284E] dark:text-slate-300 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
-          } disabled:opacity-35 disabled:cursor-not-allowed`}
-          title={
-            isExecutive
-              ? 'Modo Executivo Ativo (Presidência, Coordenações e Diretorias). Clique para Visão Completa.'
-              : 'Alternar para Visão Executiva (recolhe níveis abaixo das Diretorias)'
-          }
-        >
-          {isExecutive ? (
-            <Briefcase size={15} strokeWidth={2.2} />
-          ) : (
-            <Layers size={15} strokeWidth={2.2} />
-          )}
-          <span className="hidden sm:inline">
-            {isExecutive ? 'Visão Executiva' : 'Visão Completa'}
-          </span>
-        </button>
-      )}
-
-      {/* 5. Expandir Tudo (ChevronsUpDown) */}
+      {/* 4. Expandir Tudo (ChevronsUpDown) */}
       <button
         type="button"
         disabled={isCanvasLocked}
