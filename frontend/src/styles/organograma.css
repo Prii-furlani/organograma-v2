@@ -823,3 +823,25 @@ svg.svg-chart-container .node-foreign-object {
   text-align: center;
   font-style: italic;
 }
+
+/* =============================================================================
+   REGRAS DE CONTENÇÃO ESTÁTICA PARA CAPTURA E EXPORTAÇÃO (PNG / PDF / CANVAS)
+   ============================================================================= */
+
+/* Proteção contra expansão indevida de vetores SVG em renderizações de Canvas */
+.org-card svg,
+.jhe-org-card svg {
+  max-width: 100% !important;
+  flex-shrink: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Isolamento do estado de exportação: oculta popovers e elementos flutuantes */
+.is-exporting .team-popover,
+.is-exporting .team-tooltip-popover,
+.is-exporting .no-export,
+.is-exporting .canvas-controls-floating {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}

@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState, useMemo, forwardRef, useImperativeH
 import { OrgChart } from 'd3-org-chart';
 import * as d3 from 'd3';
 import Swal from 'sweetalert2';
+import { toPng } from 'html-to-image';
+import jsPDF from 'jspdf';
 import { useTheme } from '../context/ThemeContext';
 import { buildAndSortOrgTree } from '../utils/treeBuilder';
 import CanvasControls from './CanvasControls';
@@ -335,13 +337,15 @@ const OrganogramaView = forwardRef(function OrganogramaView(
     }
   }, [modoVisao, isCanvasLocked]);
 
-  // Exportação Direta do Canvas em Imagem (PNG 2x / SVG)
+  // Exportação Direta e Resiliente do Canvas em Imagem (PNG 2x / PDF / SVG)
   const handleExportCanvas = useCallback(
-    (format = 'png') => {
-      if (!chartRef.current) return;
+    async (format = 'png') => {
+      if (!chartRef.current || !d3ContainerRef.current) return;
+      const container = d3ContainerRef.current;
+
       try {
         const isDark = theme === 'dark';
-        const bg = isDark ? '#020931' : '#F8FAFC';
+        const bg = isDark ? '#020931' : '#FFFFFF';
         const dataStr = new Date().toISOString().slice(0, 10);
         const prefixo = modoVisao === 'executivo' ? 'organograma_executivo_jhe_' : 'organograma_completo_jhe_';
         const nomeArquivo = `${prefixo}${dataStr}`;
@@ -359,24 +363,97 @@ const OrganogramaView = forwardRef(function OrganogramaView(
             showConfirmButton: false,
             timer: 2500
           });
-        } else {
+          return;
+        }
+
+        Swal.fire({
+          title: 'Gerando exportação do organograma...',
+          text: 'Normalizando escala da árvore e renderizando alta definição (HD 2x).',
+          allowOutsideClick: false,
+          didOpen: () => {
+            Swal.showLoading();
+          }
+        });
+
+        // 1. Aplica classe de isolamento para omitir popovers suspensos e controles
+        container.classList.add('is-exporting');
+
+        // 2. Normaliza a escala da visualização executando fitView
+        chartRef.current.clearHighlighting();
+        chartRef.current.fit();
+
+        // Aguarda estabilização da animação do D3 (350ms)
+        await new Promise((resolve) => setTimeout(resolve, 350));
+
+        // 3. Opções estritas de captura com html-to-image
+        const options = {
+          backgroundColor: bg,
+          pixelRatio: 2,
+          quality: 0.98,
+          filter: (node) => {
+            if (!node || !node.classList) return true;
+            if (node.classList.contains('no-export')) return false;
+            if (node.classList.contains('team-popover')) return false;
+            if (node.classList.contains('team-tooltip-popover')) return false;
+            return true;
+          },
+          style: {
+            transform: 'none',
+            transformOrigin: 'top left'
+          }
+        };
+
+        const dataUrl = await toPng(container, options);
+
+        if (format === 'pdf') {
+          const pdf = new jsPDF('landscape', 'pt', 'a4');
+          const pdfWidth = pdf.internal.pageSize.getWidth();
+          const pdfHeight = pdf.internal.pageSize.getHeight();
+
+          const imgProps = pdf.getImageProperties(dataUrl);
+          const margin = 20;
+          const maxWidth = pdfWidth - margin * 2;
+          const maxHeight = pdfHeight - margin * 2;
+
+          const ratio = Math.min(maxWidth / imgProps.width, maxHeight / imgProps.height);
+          const finalWidth = imgProps.width * ratio;
+          const finalHeight = imgProps.height * ratio;
+          const posX = (pdfWidth - finalWidth) / 2;
+          const posY = (pdfHeight - finalHeight) / 2;
+
+          // Preenchimento de fundo consistente
+          pdf.setFillColor(isDark ? 2 : 255, isDark ? 9 : 255, isDark ? 49 : 255);
+          pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
+
+          pdf.addImage(dataUrl, 'PNG', posX, posY, finalWidth, finalHeight);
+          pdf.save(`${nomeArquivo}.pdf`);
+
           Swal.fire({
             toast: true,
             position: 'top-end',
-            icon: 'info',
-            title: 'Gerando imagem em alta resolução (2x)...',
-            text: 'O arquivo PNG será baixado automaticamente.',
+            icon: 'success',
+            title: 'Documento PDF Exportado',
+            text: 'PDF gerado com sucesso em alta definição.',
             showConfirmButton: false,
             timer: 2500
           });
+        } else {
+          // Download da imagem PNG
+          const link = document.createElement('a');
+          link.download = `${nomeArquivo}.png`;
+          link.href = dataUrl;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
 
-          chartRef.current.exportImg({
-            full: true,
-            scale: 2,
-            backgroundColor: bg,
-            onLoad: () => {
-              console.log('Imagem PNG do organograma gerada com sucesso');
-            }
+          Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: 'Imagem PNG Exportada',
+            text: 'Arquivo baixado em alta resolução nítida (2x).',
+            showConfirmButton: false,
+            timer: 2500
           });
         }
       } catch (err) {
@@ -384,9 +461,11 @@ const OrganogramaView = forwardRef(function OrganogramaView(
         Swal.fire({
           icon: 'error',
           title: 'Erro na exportação',
-          text: 'Não foi possível gerar a imagem do organograma.',
+          text: `Não foi possível gerar a imagem: ${err.message}`,
           confirmButtonColor: '#0E284E'
         });
+      } finally {
+        container.classList.remove('is-exporting');
       }
     },
     [theme, modoVisao]
@@ -606,7 +685,7 @@ const OrganogramaView = forwardRef(function OrganogramaView(
               return '';
             }
             return `
-              <div style="display:inline-flex; align-items:center;">
+              <div style="display:inline-flex; align-items:center; flex-shrink:0; min-width:20px;">
                 ${lista.slice(0, 3).map((nome, idx) => {
                   const inits = getInitials(nome);
                   const bg = idx % 2 === 0
@@ -620,6 +699,10 @@ const OrganogramaView = forwardRef(function OrganogramaView(
                     <span style="
                       width: 20px;
                       height: 20px;
+                      min-width: 20px;
+                      min-height: 20px;
+                      max-width: 20px;
+                      max-height: 20px;
                       margin-left: ${idx > 0 ? '-6px' : '0'};
                       border-radius: 9999px;
                       display: inline-flex;
@@ -631,6 +714,9 @@ const OrganogramaView = forwardRef(function OrganogramaView(
                       color: ${col};
                       border: 1.5px solid ${bdr};
                       box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+                      flex-shrink: 0;
+                      box-sizing: border-box;
+                      overflow: hidden;
                     " title="${nome}">
                       ${inits}
                     </span>
@@ -746,7 +832,7 @@ const OrganogramaView = forwardRef(function OrganogramaView(
                   }
 
                   <!-- Badge da Equipe com Popover Tooltip -->
-                  <div class="team-counter-wrapper">
+                  <div class="team-counter-wrapper" style="position: relative; flex-shrink: 0;">
                     <div class="team-counter-badge shrink-0 px-2 py-0.5 rounded-full flex items-center gap-1 text-[11px] font-bold ${
                       isDark 
                         ? (valorBadge === 0 
@@ -755,16 +841,25 @@ const OrganogramaView = forwardRef(function OrganogramaView(
                         : (valorBadge === 0 
                             ? 'bg-slate-100/90 text-slate-400 border border-slate-200/70' 
                             : 'bg-amber-50 text-amber-900 border border-amber-200/60')
-                    }" title="${textoTooltip}">
-                      <svg class="w-3 h-3 ${valorBadge === 0 ? 'opacity-40' : 'opacity-70'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    }" style="min-height: 22px; height: 22px; display: inline-flex; align-items: center; box-sizing: border-box;" title="${textoTooltip}">
+                      <svg 
+                        width="13" 
+                        height="13" 
+                        viewBox="0 0 24 24" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        stroke-width="2" 
+                        class="w-3 h-3 ${valorBadge === 0 ? 'opacity-40' : 'opacity-70'}"
+                        style="width: 13px; height: 13px; min-width: 13px; min-height: 13px; max-width: 13px; max-height: 13px; display: inline-block; flex-shrink: 0; vertical-align: middle;"
+                      >
                         <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
                         <circle cx="9" cy="7" r="4"/>
                       </svg>
-                      <span>${valorBadge}</span>
+                      <span style="font-size: 11px; font-weight: 700; line-height: 1; display: inline-block; flex-shrink: 0; white-space: nowrap;">${valorBadge}</span>
                     </div>
 
                     <!-- Wrapper do Popover de Membros Diretos -->
-                    <div class="team-popover absolute bottom-full right-0 mb-2 w-72 ${temScroll ? 'max-h-72' : 'h-auto'} flex flex-col bg-white rounded-2xl shadow-2xl border border-slate-200/90 z-[999] pointer-events-auto overflow-hidden" style="${isDark ? 'background-color:#0F1E36; border-color:rgba(148,163,184,0.22);' : ''}">
+                    <div class="team-popover no-export absolute bottom-full right-0 mb-2 w-72 ${temScroll ? 'max-h-72' : 'h-auto'} flex flex-col bg-white rounded-2xl shadow-2xl border border-slate-200/90 z-[999] pointer-events-auto overflow-hidden" style="${isDark ? 'background-color:#0F1E36; border-color:rgba(148,163,184,0.22);' : ''}">
                       
                       <!-- 1. Cabeçalho Fixo (Nunca é sobreposto e não rola) -->
                       <div class="shrink-0 flex items-center justify-between px-3.5 py-2.5 bg-white border-b border-slate-100 select-none" style="${isDark ? 'background-color:#0F1E36; border-color:rgba(148,163,184,0.18);' : ''}">

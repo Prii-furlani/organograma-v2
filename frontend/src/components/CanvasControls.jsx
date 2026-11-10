@@ -15,7 +15,8 @@ import {
   Layers,
   Download,
   Image,
-  FileImage
+  FileImage,
+  FileText
 } from 'lucide-react';
 import { useDarkMode } from '../context/ThemeContext';
 
@@ -183,6 +184,23 @@ export default function CanvasControls({
                   <div>
                     <div className="font-semibold text-slate-800 dark:text-slate-100 leading-tight">Imagem PNG (2x)</div>
                     <div className="text-[10px] text-slate-400">Alta resolução nítida</div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setExportMenuOpen(false);
+                    onExportImage('pdf');
+                  }}
+                  className="w-full text-left p-2 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5 cursor-pointer transition"
+                >
+                  <div className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
+                    <FileText size={15} strokeWidth={2.2} />
+                  </div>
+                  <div>
+                    <div className="font-semibold text-slate-800 dark:text-slate-100 leading-tight">Documento PDF (A4)</div>
+                    <div className="text-[10px] text-slate-400">Pronto para impressão</div>
                   </div>
                 </button>
 
