@@ -1,0 +1,44 @@
+# =============================================================================
+# JHE ENGENHARIA - REGRAS DE EXCLUSÃO GIT (.gitignore)
+# =============================================================================
+
+# Dependências
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+
+# Builds e Artefatos de Compilação
+dist/
+build/
+backend/dist/
+frontend/dist/
+
+# Variáveis de Ambiente e Segredos (Bloqueia todos exceto .example)
+.env
+.env.*
+!.env.example
+backend/.env
+backend/.env.*
+!backend/.env.example
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+
+# Scripts com Credenciais e Dumps de Banco de Dados
+backend/executar_importacao.js
+backend/jhe_organograma (2).sql
+backend/jhe_organograma.sql
+*.sql.gz
+*.dump
+
+# Logs e Processos
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Sistema Operacional e IDEs
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

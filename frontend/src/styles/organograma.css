@@ -1,0 +1,825 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *, .dark, .dark *));
+
+/* =============================================================================
+   PALETA DE CORES INSTITUCIONAL JHE ENGENHARIA (organograma.css)
+   Estética Executiva Minimalista (Modo Claro & Modo Escuro)
+   ============================================================================= */
+
+:root {
+  /* 1. Cores Primárias — Família Azul JHE (Institucional & Direção) */
+  --jhe-primary: #194775;
+  --jhe-primary-darker: #0E284E;
+  --jhe-primary-deep: #020931;
+  --jhe-pdf-header: #0A192F;
+  --jhe-primary-lighter: #61CBE8;
+
+  /* 2. Cores Secundárias — Família Ocre / Terroso Corporativo (Engenharia & Gestão Tática) */
+  --jhe-secondary: #B4783C;
+  --jhe-secondary-alt: #A07146;
+  --jhe-secondary-lighter: #EDB580;
+  --jhe-secondary-darker: #51341A;
+
+  /* 3. Níveis Hierárquicos Semânticos */
+  --jhe-level-strategic: #0E284E;
+  --jhe-level-tactical: #B4783C;
+  --jhe-level-support: #0284C7;
+  --jhe-level-execution: #64748B;
+
+  /* 4. Superfícies, Fundos e Linhas — Modo Claro (Light Mode Default) */
+  --jhe-canvas-bg: #F8FAFC;
+  --jhe-canvas-bg-alt: #F1F5F9;
+  --jhe-surface-card: #FFFFFF;
+  --jhe-surface-glass: rgba(255, 255, 255, 0.92);
+  --jhe-surface-subtle: #F8FAFC;
+  --jhe-avatar-subtle-bg: #F1F5F9;
+  --jhe-avatar-subtle-text: #334155;
+  --jhe-text-main: #1E293B;
+  --jhe-text-muted: #64748B;
+  --jhe-border-subtle: rgba(226, 232, 240, 0.85);
+  --jhe-card-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
+  --jhe-card-shadow-hover: 0 10px 25px -4px rgba(15, 23, 42, 0.09);
+  --jhe-connector-line: #CBD5E1;
+  --jhe-connector-line-subtle: #E2E8F0;
+
+  /* 5. Cores Semânticas de Status e Auditoria (AuditLogsModal.jsx) */
+  --jhe-status-criacao: #10B981;
+  --jhe-status-edicao: #0284C7;
+  --jhe-status-movimentacao: #B4783C;
+  --jhe-status-exclusao: #E11D48;
+}
+
+/* =============================================================================
+   MODO ESCURO (Dark Mode) — Alternado via CanvasControls.jsx
+   ============================================================================= */
+[data-theme="dark"],
+.dark {
+  --jhe-canvas-bg: #020931;
+  --jhe-canvas-bg-alt: #050E24;
+  --jhe-surface-card: #0F1E36;
+  --jhe-surface-glass: rgba(15, 30, 54, 0.92);
+  --jhe-surface-subtle: #0A1629;
+  --jhe-avatar-subtle-bg: #1A2E4C;
+  --jhe-avatar-subtle-text: #61CBE8;
+  --jhe-text-main: #FFFFFF;
+  --jhe-text-muted: #94A3B8;
+  --jhe-border-subtle: rgba(148, 163, 184, 0.18);
+  --jhe-card-shadow: 0 12px 30px -4px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
+  --jhe-card-shadow-hover: 0 16px 36px -4px rgba(0, 0, 0, 0.65);
+  --jhe-connector-line: #334155;
+  --jhe-connector-line-subtle: #475569;
+}
+
+body {
+  background-color: var(--jhe-canvas-bg);
+  color: var(--jhe-text-main);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  margin: 0;
+  padding: 0;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* =============================================================================
+   CLASSES SEMÂNTICAS DE CARDS DO ORGANOGRAMA (.jhe-level-*) — Estética Clean
+   ============================================================================= */
+.jhe-org-card {
+  background-color: var(--jhe-surface-card);
+  color: var(--jhe-text-main);
+  border: 1px solid var(--jhe-border-subtle);
+  border-top-width: 3.5px;
+  border-radius: 16px;
+  box-shadow: var(--jhe-card-shadow);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.jhe-custom-node-container {
+  padding-bottom: 22px !important;
+}
+
+.jhe-org-card:hover {
+  box-shadow: var(--jhe-card-shadow-hover);
+}
+
+.org-card {
+  box-sizing: border-box;
+}
+
+.jhe-org-card.is-highlighted {
+  outline: none !important;
+  border-color: #61CBE8 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 0 0 3px rgba(97, 203, 232, 0.4), 0 12px 28px -4px rgba(14, 40, 78, 0.15) !important;
+}
+
+[data-theme="dark"] .jhe-org-card.is-highlighted,
+.dark .jhe-org-card.is-highlighted {
+  outline: none !important;
+  border-color: #61CBE8 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 0 0 3px rgba(97, 203, 232, 0.35), 0 12px 28px -4px rgba(2, 6, 23, 0.5) !important;
+}
+
+/* =============================================================================
+   REMOÇÃO DE BORDAS/TRAÇOS AVERMELHADOS/MAGENTA NATIVOS DO D3-ORG-CHART
+   ============================================================================= */
+svg.svg-chart-container .node-rect,
+svg.svg-chart-container rect.node-rect {
+  stroke: none !important;
+  stroke-width: 0 !important;
+  fill: transparent !important;
+}
+
+/* Garante que links/conectores destacados utilizem Ciano institucional e nunca magenta */
+svg.svg-chart-container path.link[stroke="#E27396"],
+svg.svg-chart-container [stroke="#E27396"] {
+  stroke: #61CBE8 !important;
+}
+
+svg.svg-chart-container [fill="#E27396"] {
+  fill: #61CBE8 !important;
+}
+
+svg.svg-chart-container foreignObject,
+svg.svg-chart-container .node-foreign-object {
+  overflow: visible !important;
+  outline: none !important;
+}
+
+/* Estratégico / CEOs / Diretorias / OIA / Staff: Azul Marinho JHE (#0E284E) */
+.jhe-level-ceo,
+.jhe-level-diretoria,
+.jhe-level-oia,
+.jhe-level-staff {
+  border-top-color: #0E284E;
+}
+
+/* Gestão / Coordenações / Gerências / Unidades: Ocre Executivo (#B4783C) */
+.jhe-level-coordenacao,
+.jhe-level-gerencia,
+.jhe-level-unidade {
+  border-top-color: #B4783C;
+}
+
+/* Operacional / Apoio: Azul Claro (#0284C7) */
+.jhe-level-apoio {
+  border-top-color: #0284C7;
+}
+
+/* Equipes e Contratos: Slate Neutro (#64748B) */
+.jhe-level-equipe,
+.jhe-level-contrato {
+  border-top-color: #64748B;
+}
+
+/* Botão de Expansão/Colapso Minimalista (.jhe-expand-pill) */
+.jhe-expand-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  height: 24px;
+  min-width: 36px;
+  padding: 0 8px;
+  border-radius: 9999px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--jhe-text-muted);
+  background-color: var(--jhe-surface-card);
+  border: 1px solid var(--jhe-border-subtle);
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s ease;
+}
+
+.jhe-expand-pill:hover {
+  color: var(--jhe-text-main);
+  border-color: #94A3B8;
+}
+
+[data-theme="dark"] .jhe-expand-pill,
+.dark .jhe-expand-pill {
+  background-color: #0F1E36;
+  border-color: rgba(148, 163, 184, 0.28);
+  color: #E2E8F0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .jhe-expand-pill:hover,
+.dark .jhe-expand-pill:hover {
+  background-color: #1A2E4C;
+  border-color: #61CBE8;
+  color: #FFFFFF;
+}
+
+/* =============================================================================
+   BADGES SELETORES DE NÍVEL (.slug-badge-*) — NodeDrawerEditor & TopicEditor
+   ============================================================================= */
+.slug-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.55rem;
+  border-radius: 9999px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #FFFFFF;
+}
+
+.slug-badge-ceo {
+  background-color: #0E284E;
+}
+
+.slug-badge-diretoria,
+.slug-badge-oia {
+  background-color: #0F3B66;
+}
+
+.slug-badge-staff {
+  background-color: #2B527B;
+}
+
+.slug-badge-coordenacao,
+.slug-badge-gerencia,
+.slug-badge-unidade {
+  background-color: #B4783C;
+}
+
+.slug-badge-apoio {
+  background-color: #0284C7;
+}
+
+.slug-badge-equipe {
+  background-color: #64748B;
+}
+
+.slug-badge-contrato {
+  background-color: #475569;
+}
+
+/* =============================================================================
+   AVATARES INSTITUCIONAIS (Dr. Hélio DH & Dr. Viol DV)
+   ============================================================================= */
+.jhe-avatar-dh {
+  background-color: #0E284E;
+  color: #FFFFFF;
+}
+
+.jhe-avatar-dv {
+  background-color: #B4783C;
+  color: #FFFFFF;
+}
+
+/* =============================================================================
+   BADGES DE AUDITORIA E STATUS (AuditLogsModal.jsx)
+   ============================================================================= */
+.audit-badge-CRIACAO {
+  background-color: rgba(16, 185, 129, 0.12);
+  color: #10B981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.audit-badge-EDICAO {
+  background-color: rgba(2, 132, 199, 0.12);
+  color: #0284C7;
+  border: 1px solid rgba(2, 132, 199, 0.3);
+}
+
+.audit-badge-MOVIMENTACAO {
+  background-color: rgba(180, 120, 60, 0.14);
+  color: #B4783C;
+  border: 1px solid rgba(180, 120, 60, 0.35);
+}
+
+.audit-badge-EXCLUSAO {
+  background-color: rgba(225, 29, 72, 0.12);
+  color: #E11D48;
+  border: 1px solid rgba(225, 29, 72, 0.3);
+}
+
+/* =============================================================================
+   EDITOR EM TÓPICOS (TopicEditor.jsx) — Estrutura Tabular Hierárquica
+   ============================================================================= */
+.topic-editor-navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1.5rem;
+  background-color: var(--jhe-surface-card);
+  border-bottom: 1px solid var(--jhe-border-subtle);
+}
+
+.jhe-tree-toggle-group {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--jhe-border-subtle);
+  border-radius: 0.65rem;
+  background-color: var(--jhe-canvas-bg);
+  color: var(--jhe-text-main);
+}
+
+.topic-editor-info-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.55rem 1.5rem;
+  background-color: rgba(237, 181, 128, 0.14);
+  border-bottom: 1px solid rgba(237, 181, 128, 0.45);
+  color: var(--jhe-text-main);
+}
+
+.topic-editor-main-area {
+  flex: 1;
+  padding: 1.25rem 1.5rem;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.topic-editor-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--jhe-surface-card);
+  border: 1px solid var(--jhe-border-subtle);
+  border-radius: 1rem;
+  box-shadow: var(--jhe-card-shadow);
+  overflow: hidden;
+}
+
+.topic-table-header {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1.25rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--jhe-text-muted);
+  background-color: var(--jhe-canvas-bg);
+  border-bottom: 1px solid var(--jhe-border-subtle);
+}
+
+.topic-table-body {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.topic-row-bar {
+  display: flex;
+  align-items: center;
+  padding: 0.65rem 1.25rem;
+  border-bottom: 1px solid var(--jhe-border-subtle);
+  background-color: var(--jhe-surface-card);
+  transition: background-color 0.12s ease, outline 0.12s ease;
+}
+
+.topic-row-bar:hover {
+  background-color: rgba(97, 203, 232, 0.04);
+}
+
+.topic-row-bar.is-drag-over {
+  background-color: rgba(97, 203, 232, 0.12);
+  outline: 2px dashed var(--jhe-primary-lighter);
+  outline-offset: -2px;
+}
+
+.topic-row-bar.is-search-match {
+  background-color: rgba(97, 203, 232, 0.08);
+}
+
+.topic-row-bar.is-scope-locked {
+  opacity: 0.65;
+  background-color: rgba(100, 116, 139, 0.04);
+}
+
+.topic-col-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.topic-indent-group {
+  display: flex;
+  align-items: stretch;
+  align-self: stretch;
+}
+
+.topic-indent-guide {
+  display: inline-block;
+  width: 1.4rem;
+  border-left: 1px dashed var(--jhe-connector-line);
+  margin-left: 0.35rem;
+}
+
+.topic-chevron-box {
+  width: 1.6rem;
+  height: 1.6rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.375rem;
+  color: var(--jhe-text-muted);
+  cursor: pointer;
+  margin-right: 0.35rem;
+}
+
+.topic-chevron-box:hover {
+  background-color: rgba(100, 116, 139, 0.1);
+  color: var(--jhe-text-main);
+}
+
+.topic-avatar-squircle {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.55rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-right: 0.75rem;
+}
+
+.topic-text-group {
+  min-width: 0;
+  flex: 1;
+  padding-right: 1rem;
+}
+
+.topic-col-subordinates {
+  width: 180px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.topic-col-actions {
+  width: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.35rem;
+}
+
+.topic-action-btn {
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--jhe-border-subtle);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--jhe-text-muted);
+  background-color: transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.topic-action-btn:hover:not(:disabled) {
+  border-color: var(--jhe-primary);
+  color: var(--jhe-primary);
+  background-color: rgba(25, 71, 117, 0.06);
+}
+
+.topic-action-btn-danger:hover:not(:disabled) {
+  border-color: var(--jhe-status-exclusao);
+  color: var(--jhe-status-exclusao);
+  background-color: rgba(225, 29, 72, 0.08);
+}
+
+.topic-action-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.jhe-btn-floating-logs {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 25;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.05rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #FFFFFF;
+  background-color: #0E284E;
+  box-shadow: 0 6px 18px rgba(14, 40, 78, 0.18);
+  cursor: pointer;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.jhe-btn-floating-logs:hover {
+  transform: translateY(-1px);
+  opacity: 0.95;
+}
+
+
+/* =============================================================================
+   DRAWER EDITOR E PRÉ-VISUALIZAÇÃO AO VIVO (NodeDrawerEditor.jsx)
+   ============================================================================= */
+.drawer-preview-box {
+  padding: 0.9rem;
+  border-radius: 0.85rem;
+  border: 1.5px dashed var(--jhe-connector-line);
+  background-color: var(--jhe-canvas-bg);
+}
+
+.jhe-live-preview-card {
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.slug-accent-ceo,
+.slug-accent-diretoria,
+.slug-accent-oia,
+.slug-accent-staff {
+  border-top-color: #0E284E;
+}
+
+.slug-accent-coordenacao,
+.slug-accent-gerencia,
+.slug-accent-unidade {
+  border-top-color: #B4783C;
+}
+
+.slug-accent-apoio {
+  border-top-color: #0284C7;
+}
+
+.slug-accent-equipe,
+.slug-accent-contrato {
+  border-top-color: #64748B;
+}
+
+/* Recuo hierárquico para o Tree Combobox de Área Superior Imediata */
+.depth-0 { padding-left: 0.85rem; }
+.depth-1 { padding-left: 1.55rem; }
+.depth-2 { padding-left: 2.25rem; }
+.depth-3 { padding-left: 2.95rem; }
+.depth-4 { padding-left: 3.65rem; }
+.depth-5 { padding-left: 4.35rem; }
+
+/* =============================================================================
+   DIMENSIONAMENTO DE EQUIPE & TOOLTIP POPOVER (.team-counter-*)
+   ============================================================================= */
+.team-counter-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.team-counter-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3.5px;
+  padding: 2px 6.5px;
+  border-radius: 9999px;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  background-color: var(--jhe-avatar-subtle-bg);
+  color: var(--jhe-text-muted);
+  border: 1px solid var(--jhe-border-subtle);
+  transition: all 0.15s ease-in-out;
+  user-select: none;
+}
+
+[data-theme="dark"] .team-counter-badge,
+.dark .team-counter-badge {
+  background-color: rgba(30, 41, 59, 0.95);
+  border-color: rgba(51, 65, 85, 0.85);
+  color: #E2E8F0;
+}
+
+.team-counter-badge:hover {
+  background-color: rgba(97, 203, 232, 0.12);
+  color: #0E284E;
+  border-color: rgba(97, 203, 232, 0.5);
+}
+
+[data-theme="dark"] .team-counter-badge:hover,
+.dark .team-counter-badge:hover {
+  background-color: rgba(97, 203, 232, 0.18);
+  color: #61CBE8;
+  border-color: rgba(97, 203, 232, 0.4);
+}
+
+.team-counter-badge.is-collapsed {
+  background-color: rgba(180, 120, 60, 0.1);
+  color: #B4783C;
+  border-color: rgba(180, 120, 60, 0.3);
+}
+
+.team-counter-badge.is-collapsed:hover {
+  background-color: rgba(180, 120, 60, 0.2);
+  border-color: rgba(180, 120, 60, 0.5);
+}
+
+.team-icon {
+  width: 11px;
+  height: 11px;
+  stroke-width: 2.2;
+}
+
+/* Scrollbar ultrafina e discreta para o popover de equipe */
+.custom-scrollbar-subtle {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.4) transparent;
+}
+
+.custom-scrollbar-subtle::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar-subtle::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar-subtle::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.4);
+  border-radius: 9999px;
+}
+
+.custom-scrollbar-subtle::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.7);
+}
+
+[data-theme="dark"] .custom-scrollbar-subtle,
+.dark .custom-scrollbar-subtle {
+  scrollbar-color: rgba(148, 163, 184, 0.25) transparent;
+}
+
+[data-theme="dark"] .custom-scrollbar-subtle::-webkit-scrollbar-thumb,
+.dark .custom-scrollbar-subtle::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.25);
+}
+
+/* Tooltip Popover Flutuante */
+.team-popover,
+.team-tooltip-popover {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 0;
+  width: 18rem;
+  max-height: 16rem;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background-color: var(--jhe-surface-card);
+  border: 1px solid var(--jhe-border-subtle);
+  border-radius: 1rem;
+  box-shadow: 0 20px 35px -5px rgba(15, 23, 42, 0.2), 0 0 15px -3px rgba(0, 0, 0, 0.05);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(6px);
+  transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s;
+  pointer-events: none;
+  z-index: 999;
+}
+
+[data-theme="dark"] .team-popover,
+.dark .team-popover,
+[data-theme="dark"] .team-tooltip-popover,
+.dark .team-tooltip-popover {
+  background-color: #0F1E36;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  box-shadow: 0 20px 40px -5px rgba(0, 0, 0, 0.7);
+}
+
+/* Ponte invisível que preenche o vão entre a badge e o popover */
+.team-popover::after,
+.team-tooltip-popover::after {
+  content: '';
+  position: absolute;
+  bottom: -12px;
+  left: 0;
+  right: 0;
+  height: 16px;
+  background: transparent;
+  pointer-events: auto;
+}
+
+.team-counter-wrapper:hover .team-popover,
+.team-counter-wrapper:hover .team-tooltip-popover,
+.team-popover:hover,
+.team-tooltip-popover:hover {
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: translateY(0) !important;
+  pointer-events: auto !important;
+}
+
+.team-tooltip-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 10px;
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background-color: var(--jhe-avatar-subtle-bg);
+  color: var(--jhe-text-muted);
+  border-bottom: 1px solid var(--jhe-border-subtle);
+  border-top-left-radius: 11px;
+  border-top-right-radius: 11px;
+}
+
+[data-theme="dark"] .team-tooltip-header,
+.dark .team-tooltip-header {
+  background-color: #1A2E4C;
+  color: #CBD5E1;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.team-tooltip-count {
+  font-size: 9px;
+  background-color: rgba(97, 203, 232, 0.2);
+  color: #0E284E;
+  padding: 1px 5px;
+  border-radius: 9999px;
+}
+
+[data-theme="dark"] .team-tooltip-count,
+.dark .team-tooltip-count {
+  background-color: rgba(97, 203, 232, 0.25);
+  color: #61CBE8;
+}
+
+.team-tooltip-body {
+  max-height: 160px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 4px 0;
+  border-bottom-left-radius: 11px;
+  border-bottom-right-radius: 11px;
+}
+
+.team-tooltip-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  transition: background-color 0.1s ease;
+}
+
+.team-tooltip-item:hover {
+  background-color: var(--jhe-avatar-subtle-bg);
+}
+
+.team-tooltip-avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8.5px;
+  font-weight: 600;
+  background-color: var(--jhe-avatar-subtle-bg);
+  color: var(--jhe-avatar-subtle-text);
+  border: 1px solid var(--jhe-border-subtle);
+  flex-shrink: 0;
+}
+
+.team-tooltip-info {
+  min-width: 0;
+  flex: 1;
+}
+
+.team-tooltip-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--jhe-text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.team-tooltip-role {
+  font-size: 9px;
+  color: var(--jhe-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.team-tooltip-empty {
+  padding: 12px;
+  font-size: 10px;
+  color: var(--jhe-text-muted);
+  text-align: center;
+  font-style: italic;
+}

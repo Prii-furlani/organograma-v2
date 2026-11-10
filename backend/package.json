@@ -1,0 +1,25 @@
+{
+  "name": "jhe-organograma-backend",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "API RESTful Express 5 - Organograma Corporativo JHE Engenharia",
+  "main": "server.js",
+  "scripts": {
+    "dev": "nodemon --env-file-if-exists=.env.development server.js",
+    "start": "node server.js",
+    "seed:passwords": "node scripts/resetPasswords.js",
+    "build": "echo \"Backend pronto para producao (ESM nativo)\""
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "5.0.1",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.12.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}
